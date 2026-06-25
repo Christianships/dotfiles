@@ -1,0 +1,51 @@
+# Ghostty readability profile for long AI replies.
+# On macOS, Ghostty may also merge:
+# ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty
+
+# Liquid glass, tuned for readable text over transparency.
+background-blur = macos-glass-regular
+background-opacity = 0.86
+macos-titlebar-style = hidden
+background = #080d14
+foreground = #e6edf7
+
+# Font and spacing.
+font-family = JetBrainsMono Nerd Font
+font-size = 15
+font-thicken = true
+adjust-cell-height = 8%
+window-padding-x = 16
+window-padding-y = 12
+window-padding-balance = true
+
+# Cursor and selection.
+cursor-style = block
+cursor-style-blink = true
+cursor-color = #c084fc
+cursor-text = #080d14
+selection-background = #3b2a57
+selection-foreground = #f8fafc
+minimum-contrast = 3
+
+# Keep inactive splits visible without making them compete for attention.
+unfocused-split-opacity = 0.58
+
+# High-contrast ANSI colors for AI CLIs, git, shells, and Markdown renderers.
+palette = 0=#111827
+palette = 1=#ff6b8a
+palette = 2=#7ee787
+palette = 3=#ffd166
+palette = 4=#a78bfa
+palette = 5=#d2a8ff
+palette = 6=#d8b4fe
+palette = 7=#d6deeb
+palette = 8=#64748b
+palette = 9=#ff8fa3
+palette = 10=#9ff5b4
+palette = 11=#ffe08a
+palette = 12=#c084fc
+palette = 13=#e0b7ff
+palette = 14=#e879f9
+palette = 15=#ffffff
+
+confirm-close-surface = false
