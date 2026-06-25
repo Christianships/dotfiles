@@ -1,0 +1,125 @@
+# Hyprland-style AeroSpace config using Control as SUPER.
+
+config-version = 2
+
+after-startup-command = []
+start-at-login = true
+
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+accordion-padding = 20
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+automatically-unhide-macos-hidden-apps = true
+
+[gaps]
+    inner.horizontal = 8
+    inner.vertical = 8
+    outer.left = 8
+    outer.bottom = 8
+    outer.top = 8
+    outer.right = 8
+
+[exec]
+    inherit-env-vars = true
+
+[exec.env-vars]
+    PATH = '/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}'
+
+[mode.main.binding]
+    # Apps
+    ctrl-enter = 'exec-and-forget open -na Ghostty'
+    ctrl-shift-t = 'exec-and-forget /Users/christianaguilar/.config/aerospace/launch-agent-grid.sh'
+    ctrl-b = 'exec-and-forget open -na Safari'
+    ctrl-m = 'exec-and-forget open -na "Beeper Desktop"'
+    ctrl-q = 'close --quit-if-last-window'
+    ctrl-shift-f = 'exec-and-forget open -na Figma'
+
+    # Layouts
+    ctrl-slash = 'layout tiles horizontal vertical'
+    ctrl-comma = 'layout accordion horizontal vertical'
+    ctrl-f = 'fullscreen'
+    ctrl-space = 'layout floating tiling'
+    ctrl-e = 'balance-sizes'
+
+    # Focus, Hyprland/i3 style
+    ctrl-h = 'focus left'
+    ctrl-j = 'focus down'
+    ctrl-k = 'focus up'
+    ctrl-l = 'focus right'
+    ctrl-left = 'focus left'
+    ctrl-down = 'focus down'
+    ctrl-up = 'focus up'
+    ctrl-right = 'focus right'
+    cmd-tab = 'focus-back-and-forth'
+    cmd-shift-tab = 'focus-back-and-forth'
+
+    # Move windows
+    ctrl-shift-h = 'move left'
+    ctrl-shift-j = 'move down'
+    ctrl-shift-k = 'move up'
+    ctrl-shift-l = 'move right'
+    ctrl-shift-left = 'move left'
+    ctrl-shift-down = 'move down'
+    ctrl-shift-up = 'move up'
+    ctrl-shift-right = 'move right'
+
+    # Workspaces
+    ctrl-1 = 'workspace 1'
+    ctrl-2 = 'workspace 2'
+    ctrl-3 = 'workspace 3'
+    ctrl-4 = 'workspace 4'
+    ctrl-5 = 'workspace 5'
+    ctrl-6 = 'workspace 6'
+    ctrl-7 = 'workspace 7'
+    ctrl-8 = 'workspace 8'
+    ctrl-9 = 'workspace 9'
+    ctrl-0 = 'workspace 10'
+    ctrl-tab = 'workspace-back-and-forth'
+    ctrl-period = 'workspace next'
+    ctrl-semicolon = 'workspace prev'
+
+    # Send windows to workspaces
+    ctrl-shift-1 = ['move-node-to-workspace 1', 'workspace 1']
+    ctrl-shift-2 = ['move-node-to-workspace 2', 'workspace 2']
+    ctrl-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
+    ctrl-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
+    ctrl-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
+    ctrl-shift-6 = ['move-node-to-workspace 6', 'workspace 6']
+    ctrl-shift-7 = ['move-node-to-workspace 7', 'workspace 7']
+    ctrl-shift-8 = ['move-node-to-workspace 8', 'workspace 8']
+    ctrl-shift-9 = ['move-node-to-workspace 9', 'workspace 9']
+    ctrl-shift-0 = ['move-node-to-workspace 10', 'workspace 10']
+
+    # Monitors
+    ctrl-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+    ctrl-alt-tab = 'focus-monitor --wrap-around next'
+    ctrl-alt-shift-tab = 'move-node-to-monitor --wrap-around next'
+
+    # Resize mode and service mode
+    ctrl-r = 'mode resize'
+    ctrl-shift-semicolon = 'mode service'
+
+[mode.resize.binding]
+    h = 'resize width -50'
+    j = 'resize height +50'
+    k = 'resize height -50'
+    l = 'resize width +50'
+    left = 'resize width -50'
+    down = 'resize height +50'
+    up = 'resize height -50'
+    right = 'resize width +50'
+    minus = 'resize smart -50'
+    equal = 'resize smart +50'
+    enter = 'mode main'
+    esc = 'mode main'
+
+[mode.service.binding]
+    esc = ['reload-config', 'mode main']
+    r = ['reload-config', 'mode main']
+    f = ['flatten-workspace-tree', 'mode main']
+    b = ['balance-sizes', 'mode main']
+    backspace = ['close-all-windows-but-current', 'mode main']
