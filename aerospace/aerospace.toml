@@ -2,7 +2,9 @@
 
 config-version = 2
 
-after-startup-command = []
+after-startup-command = [
+    'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change'
+]
 start-at-login = true
 
 enable-normalization-flatten-containers = true
@@ -13,6 +15,15 @@ default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# SketchyBar integration. exec-on-workspace-change gets the new workspace
+# in $AEROSPACE_FOCUSED_WORKSPACE; on-focus-changed keeps the per-workspace
+# app icons fresh as windows open, close, and move.
+on-focus-changed = ['exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change']
+exec-on-workspace-change = [
+    '/bin/bash', '-c',
+    '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE PREV_WORKSPACE=$AEROSPACE_PREV_WORKSPACE'
+]
 automatically-unhide-macos-hidden-apps = true
 
 [gaps]
@@ -20,7 +31,7 @@ automatically-unhide-macos-hidden-apps = true
     inner.vertical = 8
     outer.left = 8
     outer.bottom = 8
-    outer.top = 8
+    outer.top = 8     # SketchyBar sits in the 32pt notch row, which macOS already excludes from visibleFrame
     outer.right = 8
 
 [exec]
@@ -115,8 +126,8 @@ automatically-unhide-macos-hidden-apps = true
     ctrl-alt-shift-tab = 'move-node-to-monitor --wrap-around next'
 
     # Resize mode and service mode
-    ctrl-r = 'mode resize'
-    ctrl-shift-semicolon = 'mode service'
+    ctrl-r = ['mode resize', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=resize']
+    ctrl-shift-semicolon = ['mode service', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=service']
 
 [mode.resize.binding]
     h = 'resize width -50'
@@ -129,12 +140,12 @@ automatically-unhide-macos-hidden-apps = true
     right = 'resize width +50'
     minus = 'resize smart -50'
     equal = 'resize smart +50'
-    enter = 'mode main'
-    esc = 'mode main'
+    enter = ['mode main', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=main']
+    esc = ['mode main', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=main']
 
 [mode.service.binding]
-    esc = ['reload-config', 'mode main']
-    r = ['reload-config', 'mode main']
-    f = ['flatten-workspace-tree', 'mode main']
-    b = ['balance-sizes', 'mode main']
-    backspace = ['close-all-windows-but-current', 'mode main']
+    esc = ['reload-config', 'mode main', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=main']
+    r = ['reload-config', 'mode main', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=main']
+    f = ['flatten-workspace-tree', 'mode main', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=main']
+    b = ['balance-sizes', 'mode main', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=main']
+    backspace = ['close-all-windows-but-current', 'mode main', 'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_mode_change MODE=main']
