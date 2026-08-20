@@ -31,7 +31,14 @@ automatically-unhide-macos-hidden-apps = true
     inner.vertical = 8
     outer.left = 8
     outer.bottom = 8
-    outer.top = 8     # SketchyBar sits in the 32pt notch row, which macOS already excludes from visibleFrame
+    # Room for SketchyBar, which occupies y=3..35.
+    #
+    # Per-monitor, because the two screens differ: the built-in is notched,
+    # so macOS already withholds the top 32pt from visibleFrame and the bar
+    # lives in that otherwise-dead row -- only a normal gap is needed. An
+    # external panel has no notch, so macOS reserves nothing and AeroSpace
+    # would tile straight over the bar; 43 = bar bottom (35) + an 8pt gap.
+    outer.top = [{ monitor.'built-in' = 8 }, 43]
     outer.right = 8
 
 [exec]
