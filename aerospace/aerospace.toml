@@ -35,8 +35,23 @@ automatically-unhide-macos-hidden-apps = true
     ctrl-shift-t = 'exec-and-forget /Users/christianaguilar/.config/aerospace/launch-agent-grid.sh'
     ctrl-b = 'exec-and-forget open -na Safari'
     ctrl-m = 'exec-and-forget open -na "Beeper Desktop"'
+    # Disable accidental app quits via Command-Q; Control-Q remains the intentional quit shortcut.
+    cmd-q = 'exec-and-forget true'
     ctrl-q = 'close --quit-if-last-window'
     ctrl-shift-f = 'exec-and-forget open -na Figma'
+
+    # OBS scenes and camera controls. Control is the SUPER key in this config.
+    ctrl-alt-1 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene start'
+    ctrl-alt-2 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene screen'
+    ctrl-alt-3 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene explain'
+    ctrl-alt-4 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene camera'
+    ctrl-alt-6 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene build'
+    ctrl-alt-0 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene safe'
+    ctrl-alt-c = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs follow toggle'
+    ctrl-alt-r = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs record start'
+    ctrl-alt-shift-r = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs record stop'
+    ctrl-alt-f = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs refresh force'
+    ctrl-alt-m = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs marker MARK'
 
     # Layouts
     ctrl-slash = 'layout tiles horizontal vertical'
