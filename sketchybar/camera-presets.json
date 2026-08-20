@@ -1,0 +1,31 @@
+{
+  "_comment": "Per-camera framing for the webcam. Keys are matched against the OBS device name (substring, case-insensitive); `default` applies to anything unmatched. Re-capture the active camera's current framing with: obs-camera.mjs --save",
+  "_scene": "03 EXPLAIN",
+  "_sourceName": "Video Capture Device",
+  "presets": {
+    "PC-LM1E": {
+      "positionY": 0,
+      "scaleX": 0.3354545533657074,
+      "scaleY": 0.3351851999759674,
+      "rotation": 0,
+      "cropLeft": 400,
+      "cropRight": 420,
+      "cropTop": 0,
+      "cropBottom": 0,
+      "alignment": 5,
+      "positionX": 1659
+    },
+    "default": {
+      "positionY": 0,
+      "scaleX": 0.3354545533657074,
+      "scaleY": 0.3351851999759674,
+      "rotation": 0,
+      "cropLeft": 400,
+      "cropRight": 420,
+      "cropTop": 0,
+      "cropBottom": 0,
+      "alignment": 5,
+      "positionX": 1595
+    }
+  }
+}
