@@ -14,7 +14,12 @@ accordion-padding = 20
 default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 
-on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+on-focused-monitor-changed = [
+    'move-mouse monitor-lazy-center',
+    # Retarget OBS screen capture the instant focus moves to another
+    # monitor, rather than waiting for the bridge's 5s poll.
+    'exec-and-forget /opt/homebrew/bin/node /Users/christianaguilar/.config/sketchybar/plugins/obs-display.mjs --apply'
+]
 
 # SketchyBar integration. exec-on-workspace-change gets the new workspace
 # in $AEROSPACE_FOCUSED_WORKSPACE; on-focus-changed keeps the per-workspace
