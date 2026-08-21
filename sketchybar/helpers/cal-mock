@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Fake calendar events for the SketchyBar `calendar` item.
+#
+# Writes /tmp/sketchybar-calendar.mock, which plugins/calendar.sh reads in
+# place of EventKit whenever it exists. Two reasons this is worth having:
+# the item can be built and styled on a machine where calendar access has not
+# been granted, and a specific moment -- an event thirty seconds from
+# starting, an event down to its last minute and breathing -- can be produced
+# on demand rather than waited for.
+#
+#   cal-mock add "Nighttime task" 2:20am 10   title, start, minutes
+#   cal-mock add "Stand-up" now 15
+#   cal-mock add "Retro" +45 30               45 minutes from now
+#   cal-mock list
+#   cal-mock clear                            hand the item back to EventKit
+#
+# Start accepts `now`, `+<minutes>`, `2:20am` / `2:20pm`, or 24-hour `14:20`.
+# Bare clock times mean today, never tomorrow -- a start in the past is
+# allowed on purpose, since that is how you get an event that is already
+# underway.
+set -euo pipefail
+
+MOCK="/tmp/sketchybar-calendar.mock"
+
+die() { printf '%s\n' "$*" >&2; exit 1; }
+
+# `date -j -f` fills every field the format does not mention from the current
+# clock, so parsing "2:20am" at 2:20:35 yields 2:20:35, not 2:20:00. Clock
+# times are minute-precise by definition; floor them. `now` and `+N` are
+# deliberately left alone -- those mean the instant you said them.
+floor_minute() { echo $(( $1 - $1 % 60 )); }
+
+parse_start() {
+    local spec=$1 today
+    today=$(date '+%Y-%m-%d')
+    case "$spec" in
+        now)
+            date +%s ;;
+        +[0-9]*)
+            echo $(( $(date +%s) + ${spec#+} * 60 )) ;;
+        *[aApP][mM])
+            floor_minute "$(date -j -f '%Y-%m-%d %I:%M%p' \
+                "$today $(echo "$spec" | tr '[:lower:]' '[:upper:]')" +%s 2>/dev/null \
+                || die "could not read start time: $spec")" ;;
+        *:*)
+            floor_minute "$(date -j -f '%Y-%m-%d %H:%M' "$today $spec" +%s 2>/dev/null \
+                || die "could not read start time: $spec")" ;;
+        *)
+            die "could not read start time: $spec" ;;
+    esac
+}
+
+# Nudge the bar rather than letting it sit on a stale cache for the length of
+# the plugin's TTL, which makes a mock look like it silently failed.
+refresh_bar() { sketchybar --trigger calendar_refresh 2>/dev/null || true; }
+
+case "${1:-list}" in
+    add)
+        [ $# -ge 4 ] || die 'usage: cal-mock add "<title>" <start> <minutes>'
+        title=$2
+        start=$(parse_start "$3")
+        [ "$4" -gt 0 ] 2>/dev/null || die "minutes must be a positive integer: $4"
+        end=$(( start + $4 * 60 ))
+        # Tabs separate the fields, so they cannot survive inside one.
+        printf '%s\t%s\t%s\n' "${title//$'\t'/ }" "$start" "$end" >> "$MOCK"
+        printf 'mocked %s  %s-%s (%sm)\n' \
+            "$title" "$(date -r "$start" '+%-I:%M%p')" "$(date -r "$end" '+%-I:%M%p')" "$4"
+        refresh_bar ;;
+    list)
+        [ -f "$MOCK" ] || { echo "no mocks — the item is reading the real calendar"; exit 0; }
+        while IFS=$'\t' read -r title start end; do
+            [ -n "${title:-}" ] || continue
+            printf '%-24s %s-%s\n' "$title" \
+                "$(date -r "$start" '+%-I:%M%p')" "$(date -r "$end" '+%-I:%M%p')"
+        done < "$MOCK" ;;
+    clear)
+        rm -f "$MOCK"
+        echo "cleared — the item is reading the real calendar again"
+        refresh_bar ;;
+    *)
+        die 'usage: cal-mock [add "<title>" <start> <minutes> | list | clear]' ;;
+esac
