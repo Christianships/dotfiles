@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Drop an event on the calendar starting right now, and show it immediately.
+#
+#   helpers/cal-add                        15 minutes, "Mock event"
+#   helpers/cal-add 15 "brushing teeth"
+#
+# Without the trigger the bar would take up to plugins/calendar.sh's cache TTL
+# to notice, which makes it look like nothing happened.
+set -euo pipefail
+cd "$(dirname "$0")"
+
+./calendar-now add "${1:-15}" "${2:-Mock event}"
+sketchybar --trigger calendar_refresh 2>/dev/null || true

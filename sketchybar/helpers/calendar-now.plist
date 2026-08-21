@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.sketchybar.calendar-now</string>
+	<key>CFBundleName</key>
+	<string>calendar-now</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>SketchyBar shows the calendar event you are currently in.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>SketchyBar shows the calendar event you are currently in.</string>
+</dict>
+</plist>
