@@ -92,6 +92,9 @@ automatically-unhide-macos-hidden-apps = true
     ctrl-alt-n = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs camera next'
     ctrl-alt-shift-n = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs camera prev'
     ctrl-alt-s = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs iphone'
+    # Panic button: pixelate every screen capture on stream, banner it, and
+    # turn the whole bar blood red until it is switched back off.
+    ctrl-alt-b = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs blur toggle'
 
     # Layouts
     ctrl-slash = 'layout tiles horizontal vertical'
