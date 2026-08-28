@@ -7,8 +7,12 @@ after-startup-command = [
 ]
 start-at-login = true
 
-enable-normalization-flatten-containers = true
-enable-normalization-opposite-orientation-for-nested-containers = true
+# Both normalizations are off on purpose: they are what collapse the window
+# tree back into flat rows/columns, and `split` (the primitive dwindle.sh uses
+# to build the Hyprland-style quadrant spiral) is a documented no-op while
+# flatten-containers is enabled.
+enable-normalization-flatten-containers = false
+enable-normalization-opposite-orientation-for-nested-containers = false
 
 accordion-padding = 20
 default-root-container-layout = 'tiles'
@@ -24,12 +28,23 @@ on-focused-monitor-changed = [
 # SketchyBar integration. exec-on-workspace-change gets the new workspace
 # in $AEROSPACE_FOCUSED_WORKSPACE; on-focus-changed keeps the per-workspace
 # app icons fresh as windows open, close, and move.
-on-focus-changed = ['exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change']
+on-focus-changed = [
+    'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change',
+    # Hyprland-style dwindle: pre-set the focused window's split orientation to
+    # its short axis so the next window halves it instead of adding a column.
+    'exec-and-forget /Users/christianaguilar/.config/aerospace/dwindle.sh'
+]
 exec-on-workspace-change = [
     '/bin/bash', '-c',
     '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE PREV_WORKSPACE=$AEROSPACE_PREV_WORKSPACE'
 ]
 automatically-unhide-macos-hidden-apps = true
+
+# Backstop for apps that open a window without taking focus, which would
+# otherwise skip the on-focus-changed pass. dwindle.sh self-locks, so the two
+# triggers firing together for one window is harmless.
+[[on-window-detected]]
+    run = ['exec-and-forget /Users/christianaguilar/.config/aerospace/dwindle.sh']
 
 [gaps]
     inner.horizontal = 8
@@ -84,6 +99,10 @@ automatically-unhide-macos-hidden-apps = true
     ctrl-f = 'fullscreen'
     ctrl-space = 'layout floating tiling'
     ctrl-e = 'balance-sizes'
+    # Rebuild the current workspace as a dwindle spiral, and toggle the
+    # auto-splitting on or off.
+    ctrl-shift-e = 'exec-and-forget /Users/christianaguilar/.config/aerospace/dwindle-retile.sh'
+    ctrl-shift-d = 'exec-and-forget /Users/christianaguilar/.config/aerospace/dwindle-toggle.sh'
 
     # Focus, Hyprland/i3 style
     ctrl-h = 'focus left'
