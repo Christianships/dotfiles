@@ -60,6 +60,12 @@ export CRITICAL=0xffff453a
 export FOLLOW=0xff32d74b
 export FOLLOW_DIM=0x4032d74b
 
+# Privacy-blur alarm. The whole bar is flooded with this while the stream's
+# screen capture is pixelated, so the state is impossible to lose track of.
+# Deliberately the loudest thing in the palette -- it is a warning, not an
+# accent, and it is the only time the bar itself is painted at all.
+export ALARM=0xffc40000
+
 # ── Legacy names, remapped to the white ramp ──────────────────────
 # The item and plugin scripts refer to these by name; pointing them at
 # grey levels turns every former hue ramp into a brightness ramp.
