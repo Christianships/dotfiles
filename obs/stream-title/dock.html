@@ -1,0 +1,150 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Stream Title</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 10px; font: 13px -apple-system, "SF Pro Text", system-ui, sans-serif;
+         background: #181818; color: #e6e6e6; }
+  label { display: block; margin: 10px 0 4px; font-size: 11px; letter-spacing: .04em;
+          text-transform: uppercase; color: #8b8b8b; }
+  input, textarea { width: 100%; padding: 7px 9px; border: 1px solid #3a3a3a; border-radius: 4px;
+                    background: #232323; color: #e6e6e6; font: inherit; }
+  input:focus, textarea:focus { outline: none; border-color: #6a5acd; }
+  textarea { resize: vertical; min-height: 68px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { flex: 1; }
+  button { padding: 8px 12px; border: 0; border-radius: 4px; background: #6a5acd; color: #fff;
+           font: inherit; font-weight: 600; cursor: pointer; }
+  button:hover { background: #7b6ce0; }
+  button:disabled { background: #3a3a3a; color: #777; cursor: default; }
+  button.ghost { background: #2c2c2c; color: #ccc; font-weight: 500; }
+  button.ghost:hover { background: #383838; }
+  .targets { display: flex; gap: 14px; margin: 12px 0 4px; }
+  .targets label { display: flex; gap: 6px; align-items: center; margin: 0;
+                   text-transform: none; font-size: 13px; color: #e6e6e6; letter-spacing: 0; }
+  .targets input { width: auto; }
+  .status { margin-top: 12px; border-top: 1px solid #2c2c2c; padding-top: 10px; font-size: 12px; }
+  .line { display: flex; align-items: center; gap: 7px; padding: 3px 0; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #555; flex: none; }
+  .dot.on { background: #3fb950; } .dot.off { background: #d29922; } .dot.err { background: #f85149; }
+  .name { min-width: 62px; color: #8b8b8b; }
+  .msg { color: #b0b0b0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg.bad { color: #f85149; white-space: normal; }
+  .connect { background: none; border: 0; color: #6a5acd; text-decoration: underline;
+             cursor: pointer; font: inherit; padding: 0; flex: none; }
+  .count { float: right; text-transform: none; letter-spacing: 0; }
+</style>
+
+<label>Title <span class="count" id="tc"></span></label>
+<input id="title" maxlength="140" placeholder="What are you building?">
+
+<label>Description <span class="count">YouTube only</span></label>
+<textarea id="desc" placeholder="Links, context, what viewers are watching you build..."></textarea>
+
+<label>Twitch category</label>
+<input id="cat" placeholder="Software and Game Development" list="cats">
+<datalist id="cats">
+  <option>Software and Game Development</option>
+  <option>Science &amp; Technology</option>
+  <option>Just Chatting</option>
+</datalist>
+
+<div class="targets">
+  <label><input type="checkbox" id="t-twitch" checked> Twitch</label>
+  <label><input type="checkbox" id="t-youtube" checked> YouTube</label>
+</div>
+
+<div class="row" style="margin-top:8px">
+  <button id="save">Apply to both</button>
+  <button class="ghost" id="reload" style="flex:0 0 auto">Reload</button>
+</div>
+
+<div class="status">
+  <div class="line"><span class="dot" id="d-twitch"></span><span class="name">Twitch</span>
+    <span class="msg" id="m-twitch">checking...</span></div>
+  <div class="line"><span class="dot" id="d-youtube"></span><span class="name">YouTube</span>
+    <span class="msg" id="m-youtube">checking...</span></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+$('title').addEventListener('input', () => {
+  const n = $('title').value.length;
+  $('tc').textContent = n > 100 ? n + '/140 · over YouTube limit' : n + '/140';
+  $('tc').style.color = n > 100 ? '#d29922' : '#8b8b8b';
+});
+
+function paint(platform, s) {
+  const dot = $('d-' + platform), msg = $('m-' + platform);
+  msg.classList.remove('bad');
+  if (s.unconfigured) {
+    dot.className = 'dot err';
+    msg.textContent = 'no credentials in config.json';
+    return;
+  }
+  if (!s.connected) {
+    dot.className = 'dot off';
+    msg.innerHTML = '';
+    const b = document.createElement('button');
+    b.className = 'connect'; b.textContent = 'connect';
+    b.onclick = async () => {
+      await fetch('/auth/' + platform);
+      msg.textContent = 'authorize in your browser, then Reload';
+    };
+    msg.appendChild(b);
+    return;
+  }
+  dot.className = 'dot on';
+  if (platform === 'twitch') {
+    msg.textContent = s.login + (s.category ? ' · ' + s.category : '');
+    if (s.title && !$('title').value) $('title').value = s.title;
+    if (s.category && !$('cat').value) $('cat').value = s.category;
+  } else {
+    msg.textContent = s.broadcast ? s.broadcast + ' broadcast' : 'no active/upcoming broadcast';
+    if (!s.broadcast) dot.className = 'dot off';
+    if (s.title && !$('title').value) $('title').value = s.title;
+    if (s.description && !$('desc').value) $('desc').value = s.description;
+  }
+}
+
+async function refresh() {
+  try {
+    const s = await (await fetch('/api/status')).json();
+    paint('twitch', s.twitch); paint('youtube', s.youtube);
+    $('title').dispatchEvent(new Event('input'));
+  } catch (e) {
+    $('m-twitch').textContent = $('m-youtube').textContent = 'server not reachable';
+  }
+}
+
+$('reload').onclick = refresh;
+
+$('save').onclick = async () => {
+  const targets = [];
+  if ($('t-twitch').checked) targets.push('twitch');
+  if ($('t-youtube').checked) targets.push('youtube');
+  if (!targets.length) return;
+
+  $('save').disabled = true; $('save').textContent = 'Applying...';
+  try {
+    const r = await (await fetch('/api/update', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        title: $('title').value, description: $('desc').value,
+        category: $('cat').value, targets
+      })
+    })).json();
+    for (const p of targets) {
+      const msg = $('m-' + p);
+      if (r[p] && r[p].ok) { $('d-' + p).className = 'dot on'; msg.textContent = 'updated'; msg.classList.remove('bad'); }
+      else { $('d-' + p).className = 'dot err'; msg.textContent = (r[p] && r[p].error) || 'failed'; msg.classList.add('bad'); }
+    }
+  } finally {
+    $('save').disabled = false; $('save').textContent = 'Apply to both';
+  }
+};
+
+refresh();
+</script>
