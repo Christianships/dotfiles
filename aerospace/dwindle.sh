@@ -5,10 +5,10 @@
 # workspace grows into ever-narrower columns: four windows means four slivers.
 # This restores the two layouts people actually want from Hyprland.
 #
-#   grid   (default) -- windows fill an even grid before anything nests.
-#                       Two rows on a landscape display, so 2 windows are
-#                       side by side, 4 windows are a true 2x2 of equal
-#                       quarters, 6 windows are 3x2, and so on.
+#   grid   (default) -- the fourth window, and only the fourth, snaps the
+#                       workspace into a true 2x2 of equal quarters. Below
+#                       that AeroSpace's own tiling is left alone, so one to
+#                       three windows open side by side as normal.
 #   spiral           -- Hyprland's dwindle proper: each new window halves the
 #                       focused window across its longer axis, so the tree
 #                       spirals into the last-focused corner.
@@ -29,6 +29,11 @@ WINDOW_SIZE="$HERE/bin/window-size"
 MODE_FILE="$HERE/.dwindle-mode"
 STATE_DIR="${TMPDIR:-/tmp}/aerospace-dwindle"
 LOCK_DIR="$STATE_DIR/.lock"
+# Grid mode only intervenes at exactly this many windows. Fewer, and plain
+# AeroSpace tiling is already what you want; more, and reshuffling the whole
+# workspace into an uneven grid is more disruptive than leaving the tree be.
+# The retile key (--force) ignores this and rebuilds whatever it finds.
+GRID_AT=4
 
 force=0
 [ "${1:-}" = "--force" ] && force=1
@@ -197,8 +202,7 @@ prepare_spiral() {
 read_windows
 
 if [ "$mode" = grid ]; then
-    [ "$count" -lt 2 ] && exit 0
-    # Rebuilding on every focus change would thrash the tree, so only do it
+    # Rebuilding on every focus change would thrash the tree, so only look
     # when the window count moved. That also covers closes, which AeroSpace
     # has no event for.
     count_file="$STATE_DIR/count-$workspace"
@@ -215,6 +219,13 @@ if [ "$mode" = grid ]; then
         read_windows
         [ "$count" = "$previous" ] && break
     done
+
+    # Record the settled count before bailing out, so the next event compares
+    # against reality and the fourth window still triggers a rebuild.
+    printf '%s' "$count" >"$count_file"
+    if [ "$force" -eq 0 ] && [ "$count" -ne "$GRID_AT" ]; then
+        exit 0
+    fi
     [ "$count" -lt 2 ] && exit 0
 
     for _ in 1 2 3; do
