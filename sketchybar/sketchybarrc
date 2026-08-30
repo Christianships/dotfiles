@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+#
+#  SketchyBar — Hyprland-flavoured glass bar for AeroSpace + OBS
+#
+#  Layout
+#    left    workspaces (AeroSpace) · mode · calendar (current event)
+#    right   OBS (scene · record · stream · cam)
+#            · cpu · mem · battery · clock
+#
+#  Geometry (MacBook Air 13" M4, measured via NSScreen):
+#    frame 1470x956 · notch = safeAreaInsets.top = 32pt
+#    visibleFrame is 1470x924 and ALREADY excludes that top 32pt, even with
+#    the macOS menu bar auto-hidden -- macOS never places windows behind the
+#    notch. So the bar is exactly 32pt tall and sits IN the notch row, which
+#    was dead space, and costs no window area at all.
+#
+#    y_offset is 3 -- nudged down slightly off the top edge for breathing
+#    room. Keep it small: the bar is 32pt tall in a 32pt notch row, so each
+#    point of offset pushes that much past the row. AeroSpace gives windows
+#    an 8pt top gap, so anything up to ~8 stays clear of them.
+#
+#    SketchyBar's baseline depends on whether the macOS
+#    menu bar is auto-hidden: while the menu bar was visible it parked the
+#    bar 31pt lower (below the menu bar row), but with auto-hide on it
+#    already starts at y=0 and fills the notch row directly. A hardcoded
+#    negative offset is therefore wrong -- it pushed the whole bar off the
+#    top of the screen once auto-hide took effect.
+#
+#    Auto-hide lives in com.apple.controlcenter -> AutoHideMenuBarOption on
+#    macOS 26 (Tahoe). The legacy NSGlobalDomain _HIHideMenuBar key is
+#    migrated and ignored.
+#
+#  Items flank the notch in the usable strips, x 0-646 and x 825-1470.
+#  Nothing uses the `center` position; it would render behind the notch.
+#
+#  The bar itself draws nothing: no tint, no blur. Each group floats as its
+#  own faint pill over the bare wallpaper. Palette is monotone -- see
+#  colors.sh.
+
+export CONFIG_DIR="$HOME/.config/sketchybar"
+export PLUGIN_DIR="$CONFIG_DIR/plugins"
+export ITEM_DIR="$CONFIG_DIR/items"
+
+source "$CONFIG_DIR/colors.sh"
+source "$CONFIG_DIR/icons.sh"
+
+export FONT="JetBrainsMono Nerd Font"
+export APP_FONT="sketchybar-app-font:Regular:16.0"
+
+# Half the gap between neighbouring pills. Brackets contribute nothing to
+# layout -- they only paint a background behind items that are already
+# adjacent -- so the space between two pills is the sum of the facing items'
+# paddings, and each side supplies half. Items that share a pill override this
+# back down; see the comments at those overrides.
+export GAP=5
+
+# ── Bar ───────────────────────────────────────────────────────────
+sketchybar --bar \
+    height=32 \
+    position=top \
+    sticky=on \
+    y_offset=3 \
+    margin=8 \
+    padding_left=2 \
+    padding_right=2 \
+    color="$BAR_COLOR" \
+    blur_radius=0 \
+    border_width=0 \
+    corner_radius=0 \
+    shadow=off \
+    topmost=off \
+    font_smoothing=on
+
+# ── Item defaults ─────────────────────────────────────────────────
+sketchybar --default \
+    updates=when_shown \
+    icon.font="$FONT:Bold:13.0" \
+    icon.color="$FG" \
+    icon.padding_left=8 \
+    icon.padding_right=5 \
+    label.font="$FONT:SemiBold:12.0" \
+    label.color="$FG" \
+    label.padding_left=0 \
+    label.padding_right=8 \
+    background.height=24 \
+    background.corner_radius=8 \
+    background.border_width=0 \
+    background.color="$TRANSPARENT" \
+    background.border_color="$TRANSPARENT" \
+    padding_left="$GAP" \
+    padding_right="$GAP"
+
+# ── Items ─────────────────────────────────────────────────────────
+# Left region stacks left-to-right, in source order.
+source "$ITEM_DIR/spaces.sh"
+source "$ITEM_DIR/calendar.sh"
+
+# Right region stacks right-to-left: the first item added sits furthest
+# right, so these are sourced in reverse visual order. OBS is sourced
+# last and therefore renders leftmost of the right cluster, where it
+# stays put instead of drifting as workspace pills grow and shrink.
+source "$ITEM_DIR/clock.sh"
+source "$ITEM_DIR/status.sh"
+source "$ITEM_DIR/system.sh"
+source "$ITEM_DIR/obs.sh"
+
+# ── Go ────────────────────────────────────────────────────────────
+sketchybar --hotload on
+sketchybar --update
+
+echo "sketchybar configuration loaded"
