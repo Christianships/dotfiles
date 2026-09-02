@@ -1,0 +1,46 @@
+/* Twitch's own dark-theme tokens. Chat should look like it was lifted out of
+   the site, not like a designed "overlay". */
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/Inter.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --bg:      #18181b;   /* Twitch chat background */
+  --bg-alt:  #1f1f23;
+  --text:    #efeff1;
+  --muted:   #adadb8;
+  --line:    #2f2f35;
+  --purple:  #9147ff;   /* Twitch brand */
+  --red:     #ff0033;   /* YouTube */
+  --ui: "Inter", -apple-system, "SF Pro Text", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;    /* OBS browser source */
+  overflow: hidden;
+  font-family: var(--ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* still referenced by viewers.css and preview.html until those get the same
+   treatment - kept as aliases so nothing breaks mid-redesign */
+:root {
+  --orange: #FE4A01;
+  --twitch: var(--purple);
+  --youtube: var(--red);
+  --ink: var(--text);
+  --dim: var(--muted);
+  --panel: rgba(10, 10, 10, 0.72);
+  --panel-solid: #0b0b0b;
+  --sans: var(--ui);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}

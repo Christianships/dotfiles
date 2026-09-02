@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>overlay simulator</title>
+<link rel="stylesheet" href="css/base.css">
+<style>
+  html, body { overflow: auto; background: #0c0c0d; height: auto; }
+  body { color: #8b8b93; font: 400 13px/1.6 var(--ui); }
+
+  header {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 24px;
+    background: #0c0c0d; border-bottom: 1px solid #1c1c20;
+  }
+  header h1 { margin: 0 14px 0 0; font-size: 14px; font-weight: 600; color: #efeff1; }
+  .grp { display: flex; align-items: center; gap: 6px; padding-right: 12px; border-right: 1px solid #1c1c20; }
+  .grp:last-of-type { border: 0; }
+  .grp .t { font-size: 11px; color: #5c5c66; margin-right: 2px; }
+  button {
+    font: 500 12px var(--ui); color: #d3d3d8; background: #1c1c20; border: 0;
+    padding: 7px 11px; border-radius: 4px; cursor: pointer;
+  }
+  button:hover { background: #2f2f35; color: #fff; }
+  button.tw:hover { background: var(--purple); }
+  button.yt:hover { background: var(--red); }
+  button.on { background: var(--purple); color: #fff; }
+  .sp { margin-left: auto; }
+
+  main { padding: 22px 24px 60px; }
+  .stage {
+    position: relative;
+    width: 1280px; height: 720px;      /* 1920x1080 shown at 2/3 */
+    transform-origin: top left;
+    overflow: hidden;
+    border: 1px solid #1c1c20;
+    background: #000 center/cover no-repeat;
+  }
+  .stage.cam    { background-image: url("img/backdrop.jpg"); }
+  .stage.bright { background: linear-gradient(135deg, #eef1f5, #c3ccd8 60%, #9fb0c4); }
+  .stage.dark   { background: #101013; }
+  .stage.checker {
+    background:
+      linear-gradient(45deg, #1c1c20 25%, transparent 25%, transparent 75%, #1c1c20 75%),
+      linear-gradient(45deg, #1c1c20 25%, #141417 25%, #141417 75%, #1c1c20 75%);
+    background-size: 26px 26px; background-position: 0 0, 13px 13px;
+  }
+  .src { position: absolute; }
+  .src iframe { width: 100%; height: 100%; border: 0; background: transparent; display: block; }
+  .stage.guides .src { outline: 1px dashed rgba(145, 71, 255, .5); }
+  .stage.guides .src::after {
+    content: attr(data-name);
+    position: absolute; left: 0; bottom: 100%;
+    font: 500 10px var(--ui); color: rgba(145, 71, 255, .9);
+    background: rgba(0, 0, 0, .6); padding: 1px 4px;
+  }
+  .foot { margin-top: 14px; color: #5c5c66; font-size: 12px; }
+  code { font: 500 11.5px ui-monospace, Menlo, monospace; color: #9a9aa2; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>simulator</h1>
+
+  <div class="grp">
+    <span class="t">twitch</span>
+    <button class="tw" data-fire="follow">follow</button>
+    <button class="tw" data-fire="sub">sub</button>
+    <button class="tw" data-fire="resub">resub</button>
+    <button class="tw" data-fire="subgift">gift sub</button>
+    <button class="tw" data-fire="giftbomb">gift bomb</button>
+    <button class="tw" data-fire="raid">raid</button>
+    <button class="tw" data-fire="cheer">cheer</button>
+  </div>
+
+  <div class="grp">
+    <span class="t">youtube</span>
+    <button class="yt" data-fire="member" data-plat="youtube">member</button>
+    <button class="yt" data-fire="superchat" data-plat="youtube">super chat</button>
+  </div>
+
+  <div class="grp">
+    <span class="t">chat</span>
+    <button id="one">one line</button>
+    <button id="roll">start</button>
+    <button id="storm">storm</button>
+    <button id="clear">clear</button>
+  </div>
+
+  <div class="sp"></div>
+  <div class="grp" id="bgs"></div>
+  <button id="guides">guides</button>
+</header>
+
+<main>
+  <div class="stage cam" id="stage"></div>
+  <p class="foot">Live at the real canvas size, 1920&times;1080 shown at 2/3, sources exactly where
+  <code>layout.json</code> puts them in OBS. Backdrop is a still from your camera.</p>
+</main>
+
+<script src="config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/bus.js"></script>
+<script src="js/labels.js"></script>
+<script src="js/demo.js"></script>
+<script>
+Bus.init();
+const SCALE = 2 / 3;
+const stage = document.getElementById("stage");
+
+fetch("layout.json").then(r => r.json()).then(layout => {
+  for (const s of layout.sources) {
+    const z = s.scale || 1;              /* whatever you scaled it to in OBS */
+    const d = document.createElement("div");
+    d.className = "src";
+    d.dataset.name = `${s.name}  ${s.w}x${s.h}${z !== 1 ? " @" + z + "x" : ""}`;
+    d.style.cssText =
+      `left:${s.x * SCALE}px; top:${s.y * SCALE}px; ` +
+      `width:${s.w * z * SCALE}px; height:${s.h * z * SCALE}px`;
+    /* render at true pixel size then scale, so type and art are exactly what
+       OBS will show rather than a reflowed layout */
+    d.innerHTML =
+      `<iframe src="${s.file}?demo=${s.name === "viewers" ? 1 : 0}" ` +
+      `style="width:${s.w}px;height:${s.h}px;` +
+      `transform:scale(${SCALE * z});transform-origin:top left"></iframe>`;
+    stage.appendChild(d);
+  }
+});
+
+for (const b of document.querySelectorAll("[data-fire]")) {
+  b.onclick = () => Demo.fire(b.dataset.fire, b.dataset.plat || "twitch");
+}
+
+document.getElementById("one").onclick = () => Demo.chat("twitch");
+document.getElementById("roll").onclick = e => {
+  const on = e.target.classList.toggle("on");
+  e.target.textContent = on ? "stop" : "start";
+  on ? Demo.start(1400) : Demo.stop();
+};
+document.getElementById("storm").onclick = () => {
+  let n = 0;
+  const t = setInterval(() => { Demo.chat("twitch"); if (++n > 14) clearInterval(t); }, 130);
+};
+document.getElementById("clear").onclick =
+  () => Bus.emit({ test: true, platform: "twitch", type: "clear", meta: {} });
+
+for (const name of ["cam", "dark", "bright", "checker"]) {
+  const b = document.createElement("button");
+  b.textContent = name;
+  b.className = name === "cam" ? "on" : "";
+  b.onclick = () => {
+    stage.className = "stage " + name + (stage.classList.contains("guides") ? " guides" : "");
+    [...document.getElementById("bgs").querySelectorAll("button")]
+      .forEach(x => x.classList.toggle("on", x === b));
+  };
+  document.getElementById("bgs").appendChild(b);
+}
+document.getElementById("guides").onclick = e => {
+  stage.classList.toggle("guides");
+  e.target.classList.toggle("on");
+};
+
+if (U.qs.get("demo") === "1") {
+  setTimeout(() => Demo.start(1300), 400);
+  setTimeout(() => Demo.fire("sub", "twitch"), 1200);
+}
+</script>
+</body>
+</html>

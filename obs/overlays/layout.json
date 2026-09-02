@@ -1,0 +1,35 @@
+{
+  "canvas": {
+    "w": 1920,
+    "h": 1080
+  },
+  "sources": [
+    {
+      "name": "chat",
+      "file": "chat.html",
+      "w": 400,
+      "h": 640,
+      "x": 1255,
+      "y": -99,
+      "scale": 1.663
+    },
+    {
+      "name": "alerts",
+      "file": "alerts.html",
+      "w": 560,
+      "h": 300,
+      "x": 188,
+      "y": 147,
+      "scale": 1
+    },
+    {
+      "name": "viewers",
+      "file": "viewers.html",
+      "w": 210,
+      "h": 78,
+      "x": 0,
+      "y": 0,
+      "scale": 1
+    }
+  ]
+}

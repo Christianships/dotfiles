@@ -1,0 +1,32 @@
+/* Twitch viewer count: no container, a red outlined eye and a black number. */
+#badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap, 12px);
+  padding: 6px 10px;
+  border: var(--bw, 0) solid var(--bc, transparent);
+  border-radius: var(--br, 0);
+  background: var(--bgfill, transparent);
+  font-family: var(--ui);
+}
+#badge.off { opacity: .55; }
+
+#badge .eye {
+  flex: none;
+  width: var(--eye, 44px);
+  height: var(--eye, 44px);
+  color: var(--ec, #eb0400);
+  stroke-width: var(--sw, 1.8);      /* on a 24 viewBox - light, not chunky */
+}
+
+#badge .n {
+  font-size: var(--num, 40px);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--nc, #000);
+}
