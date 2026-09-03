@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>twitch token</title>
+<link rel="stylesheet" href="css/base.css">
+<style>
+  html, body { background: #0a0a0a; overflow: auto; }
+  body { color: #8a8a8a; font-size: 13px; padding: 40px; max-width: 640px; }
+  .tag { font: 600 9.5px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--orange); }
+  h1 { margin: 2px 0 14px; font-size: 20px; letter-spacing: -.02em; color: #f0f0f0; }
+  p { line-height: 1.7; color: #6e6e6e; }
+  ol { line-height: 1.9; color: #6e6e6e; padding-left: 18px; }
+  code { font: 500 12px var(--mono); color: #c9c9c9; background: #161616; padding: 2px 6px; border-radius: 4px; }
+  label { display: block; margin: 18px 0 6px; font: 600 9.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: #5c5c5c; }
+  input {
+    width: 100%; font: 500 13px var(--mono); color: #eee;
+    background: #141414; border: 1px solid #242424; border-radius: 8px; padding: 11px 12px;
+  }
+  input:focus { outline: none; border-color: var(--orange); }
+  button {
+    margin-top: 12px; font: 600 12px var(--sans); color: #fff; background: var(--orange);
+    border: 0; border-radius: 8px; padding: 11px 16px; cursor: pointer;
+  }
+  button.ghost { background: #1b1b1b; color: #ddd; }
+  .out { margin-top: 22px; padding: 16px; border-radius: 10px; background: #111; border: 1px solid #1e1e1e; display: none; }
+  .out.on { display: block; }
+  .tok { font: 500 12px var(--mono); color: #35d07f; word-break: break-all; margin: 8px 0 0; }
+  .warn { color: #e8b23a; }
+</style>
+</head>
+<body>
+<div class="tag">obs overlays</div>
+<h1>get a twitch token</h1>
+<p>Needed for the <b>viewer / follower / sub counts</b>, <b>follow alerts</b>, and
+<b>setting your stream title</b>. Chat, subs, gift subs, raids and cheers all work
+without it.</p>
+
+<ol>
+  <li>Go to <a href="https://dev.twitch.tv/console/apps" target="_blank" style="color:#9146FF">dev.twitch.tv/console/apps</a>
+      and register an app - Client Type must be <b>Public</b>. One app covers everything,
+      titles included.</li>
+  <li>Set the OAuth Redirect URL to exactly <code id="ru"></code></li>
+  <li>Paste the Client ID below and authorize.</li>
+</ol>
+
+<label>client id</label>
+<input id="cid" placeholder="abcdefghijklmnopqrstuvwxyz1234" autocomplete="off">
+<button id="go">authorize</button>
+<button id="check" class="ghost">check saved token</button>
+
+<div class="out" id="out"></div>
+
+<script>
+const RU = location.origin + location.pathname;
+document.getElementById("ru").textContent = RU;
+const SCOPES = [
+  "moderator:read:followers",   // follower count + follow alerts
+  "channel:read:subscriptions", // sub count
+  "bits:read",                  // cheer events
+  "channel:manage:broadcast"    // set the stream title + category
+];
+const out = document.getElementById("out");
+const saved = localStorage.getItem("twitchClientId") || "";
+document.getElementById("cid").value = saved;
+
+document.getElementById("go").onclick = () => {
+  const cid = document.getElementById("cid").value.trim();
+  if (!cid) return;
+  localStorage.setItem("twitchClientId", cid);
+  const u = new URL("https://id.twitch.tv/oauth2/authorize");
+  u.searchParams.set("client_id", cid);
+  u.searchParams.set("redirect_uri", RU);
+  u.searchParams.set("response_type", "token");
+  u.searchParams.set("scope", SCOPES.join(" "));
+  location.href = u;
+};
+
+document.getElementById("check").onclick = () => show(localStorage.getItem("twitchToken"));
+
+async function show(token) {
+  if (!token) { out.className = "out on"; out.innerHTML = "<span class='warn'>no token yet</span>"; return; }
+  out.className = "out on";
+  out.innerHTML = "checking...";
+  let info = null;
+  try {
+    const r = await fetch("https://id.twitch.tv/oauth2/validate", { headers: { Authorization: "OAuth " + token } });
+    info = r.ok ? await r.json() : null;
+  } catch {}
+  out.innerHTML = `
+    <div style="color:#c9c9c9;font-weight:600">${info ? "valid for " + info.login : "<span class='warn'>token did not validate</span>"}</div>
+    ${info ? `<div style="margin-top:6px;font:500 11px var(--mono);color:#6e6e6e">scopes: ${info.scopes.join(", ")} · expires in ${Math.round(info.expires_in / 3600)}h</div>` : ""}
+    ${info && !info.scopes.includes("channel:manage:broadcast")
+        ? `<p class="warn" style="margin-top:12px">This token cannot set your stream title -
+           authorize again above to add the missing scope.</p>` : ""}
+    <button id="saveIt" style="margin-top:14px">save to my overlays</button>
+    <p style="margin-top:14px;color:#565656">Implicit tokens last about 60 days, then rerun this page.</p>`;
+  const btn = document.getElementById("saveIt");
+  if (btn) btn.onclick = async () => {
+    btn.textContent = "saving...";
+    try {
+      const r = await fetch("/api/overlays", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: localStorage.getItem("twitchClientId") || "", token })
+      }).then(r => r.json());
+      btn.textContent = r.ok ? "saved - sources reloaded" : "failed: " + (r.error || "?");
+    } catch (e) { btn.textContent = "failed: " + e.message; }
+  };
+}
+
+const h = new URLSearchParams(location.hash.slice(1));
+if (h.get("access_token")) {
+  localStorage.setItem("twitchToken", h.get("access_token"));
+  history.replaceState(null, "", RU);
+  show(h.get("access_token"));
+} else if (h.get("error")) {
+  out.className = "out on";
+  out.innerHTML = `<span class="warn">${h.get("error_description") || h.get("error")}</span>`;
+}
+</script>
+</body>
+</html>
