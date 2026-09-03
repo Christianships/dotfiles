@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/chat.css">
+<style>
+  /* Not an overlay: this one is for you, on a second monitor or as an OBS
+     dock. Solid background, scrollback, a header that tells you whether it is
+     actually connected instead of just sitting there empty. */
+  html, body { background: var(--bg); overflow: hidden; height: 100%; }
+  body { display: flex; flex-direction: column; }
+
+  header {
+    flex: none;
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    background: #0e0e10; border-bottom: 1px solid var(--line);
+    font: 600 12px var(--ui); color: var(--text);
+  }
+  header .pip { width: 8px; height: 8px; border-radius: 50%; background: #45454d; flex: none; }
+  header .pip.live { background: #00c176; }
+  header .pip.connecting { background: #e8b23a; }
+  header .pip.down, header .pip.error, header .pip.off { background: #eb0400; }
+  header .who { color: var(--muted); font-weight: 400; }
+  header .sp { margin-left: auto; }
+  header button {
+    font: 500 11px var(--ui); color: var(--muted); background: #1f1f23;
+    border: 0; border-radius: 4px; padding: 5px 9px; cursor: pointer;
+  }
+  header button:hover { color: var(--text); background: #2f2f35; }
+  header button.on { background: var(--purple); color: #fff; }
+
+  /* the shared chat.css positions #chat absolutely for the overlay - here it
+     needs to be a normal scrolling column instead */
+  #chat {
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    justify-content: flex-start;
+    padding: 8px 0 12px;
+  }
+  #chat::-webkit-scrollbar { width: 10px; }
+  #chat::-webkit-scrollbar-thumb { background: #2f2f35; border-radius: 5px; }
+
+  .empty { padding: 26px 16px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  .empty b { color: var(--text); display: block; margin-bottom: 4px; font-size: 13px; }
+  .empty a { color: var(--purple); }
+</style>
+</head>
+<body>
+  <header>
+    <span class="pip" id="pip"></span>
+    <span id="where">connecting…</span>
+    <span class="who" id="note"></span>
+    <span class="sp"></span>
+    <button id="stick" class="on" title="Follow new messages">auto-scroll</button>
+  </header>
+  <div id="chat"></div>
+
+  <script src="config.js"></script>
+  <script>
+  /* window defaults: deep scrollback, no fading, solid rows - this is a
+     reading surface, not a 30-line overlay */
+  Object.assign(window.OVERLAY_CONFIG.chat, { theme: "panel", max: 400, fade: 0 });
+  </script>
+  <script src="js/util.js"></script>
+  <script src="js/bus.js"></script>
+  <script src="js/labels.js"></script>
+  <script src="js/emotes.js"></script>
+  <script src="js/twitch-irc.js"></script>
+  <script src="js/twitch-helix.js"></script>
+  <script src="js/youtube.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/chat-app.js"></script>
+  <script>
+  /* chat-app renders into #chat exactly as it does on stream; everything here
+     is the window furniture around it */
+  document.addEventListener("DOMContentLoaded", () => {
+    document.body.classList.add("panel");
+
+    const root = document.getElementById("chat");
+    const pip = document.getElementById("pip");
+    const where = document.getElementById("where");
+    const note = document.getElementById("note");
+
+    const channel = U.cfg("twitch", "channel", "channel");
+    if (!channel && U.qs.get("demo") !== "1") {
+      root.innerHTML =
+        `<div class="empty"><b>No Twitch channel configured</b>
+         Chat has nothing to connect to. Set it in the
+         <a href="/panel">stream setup panel</a>, or add
+         <code>?channel=yourname</code> to this URL.</div>`;
+    }
+
+    /* status pings come back over the bus from the IRC + YouTube clients */
+    try {
+      new BroadcastChannel("obs-overlays").onmessage = e => {
+        const p = e.data;
+        if (!p || !p.__status) return;
+        if (p.source === "twitch") {
+          pip.className = "pip " + p.state;
+          where.textContent = p.state === "live" ? p.detail : p.state;
+          if (p.state === "live") { const e0 = root.querySelector(".empty"); if (e0) e0.remove(); }
+        }
+        if (p.source === "youtube" && p.state === "live") note.textContent = "+ youtube";
+      };
+    } catch {}
+
+    /* keep pinned to the newest unless you scroll up to read something */
+    let stick = true;
+    const btn = document.getElementById("stick");
+    btn.onclick = () => {
+      stick = !stick;
+      btn.classList.toggle("on", stick);
+      if (stick) root.scrollTop = root.scrollHeight;
+    };
+    root.addEventListener("scroll", () => {
+      const atEnd = root.scrollHeight - root.scrollTop - root.clientHeight < 40;
+      if (!atEnd && stick) { stick = false; btn.classList.remove("on"); }
+    });
+    new MutationObserver(() => { if (stick) root.scrollTop = root.scrollHeight; })
+      .observe(root, { childList: true });
+  });
+  </script>
+</body>
+</html>

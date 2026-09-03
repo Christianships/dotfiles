@@ -1,0 +1,16 @@
+{
+  "twitch": {
+    "client_id": "",
+    "client_secret": ""
+  },
+  "youtube": {
+    "client_id": "",
+    "client_secret": ""
+  },
+  "show": {
+    "start": "2026-09-03",
+    "template": "Day {day} | Vibe Coding My Startup | {desc}",
+    "category": "Software and Game Development",
+    "offset": 0
+  }
+}

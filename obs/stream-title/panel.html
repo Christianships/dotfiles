@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stream Setup</title>
+<style>
+  :root {
+    --bg: #0e0e10; --panel: #18181b; --line: #2f2f35;
+    --text: #efeff1; --muted: #adadb8; --purple: #9147ff; --red: #eb0400; --green: #00c176;
+    --ui: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 18px; background: var(--bg); color: var(--text);
+    font: 400 13px/1.5 var(--ui);
+  }
+  h2 {
+    margin: 22px 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: #5c5c66;
+  }
+  h2:first-child { margin-top: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+  label { display: block; margin: 10px 0 4px; font-size: 12px; color: var(--muted); }
+  label:first-child { margin-top: 0; }
+  input, textarea, select {
+    width: 100%; font: 400 13px var(--ui); color: var(--text);
+    background: #0e0e10; border: 1px solid var(--line); border-radius: 5px; padding: 8px 9px;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--purple); }
+  textarea { resize: vertical; min-height: 66px; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; min-width: 0; }
+  button {
+    font: 600 12px var(--ui); color: var(--text); background: #2f2f35;
+    border: 0; border-radius: 5px; padding: 9px 14px; cursor: pointer;
+  }
+  button:hover { background: #3a3a42; }
+  button.go { background: var(--purple); }
+  button.go:hover { background: #a45cff; }
+  button:disabled { opacity: .45; cursor: default; }
+  .bar { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .hint { color: #6e6e78; font-size: 11.5px; margin: 6px 0 0; line-height: 1.5; }
+  .count { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+  .count.over { color: var(--red); font-weight: 600; }
+  .preview {
+    margin-top: 8px; padding: 9px 10px; border-radius: 5px;
+    background: #0e0e10; border: 1px solid var(--line);
+    font: 500 13px var(--ui); word-break: break-word;
+  }
+  .status { display: flex; flex-direction: column; gap: 7px; }
+  .st { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .pip { width: 8px; height: 8px; border-radius: 50%; background: #45454d; flex: none; }
+  .pip.on { background: var(--green); }
+  .pip.off { background: var(--red); }
+  .pip.warn { background: #e8b23a; }
+  .st b { font-weight: 600; }
+  .st span { color: var(--muted); }
+  .toast {
+    position: fixed; left: 18px; right: 18px; bottom: 14px;
+    background: #2f2f35; border-radius: 6px; padding: 10px 12px; font-size: 12.5px;
+    opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .toast.on { opacity: 1; }
+  .toast.err { background: #5b1414; }
+  a { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<h2>Going live</h2>
+<div class="card">
+  <label>Description — the part after the second pipe</label>
+  <input id="desc" placeholder="I Think We Finally Found Product-Market Fit" autocomplete="off">
+  <div class="preview" id="preview">…</div>
+  <div class="count" id="count"></div>
+
+  <label>YouTube description</label>
+  <textarea id="ytdesc" placeholder="Links, what you're building, socials…"></textarea>
+
+  <div class="bar">
+    <button class="go" id="push">Set title on both</button>
+    <button id="pushTw">Twitch only</button>
+    <button id="pushYt">YouTube only</button>
+  </div>
+  <p class="hint">Twitch allows 140 characters, YouTube 100 — the counter warns at the
+  lower one. Set this <b>before</b> you go live: the title at that moment is what goes
+  out in every follower notification.</p>
+</div>
+
+<h2>Status</h2>
+<div class="card status" id="status">
+  <div class="st"><span class="pip"></span><span>loading…</span></div>
+</div>
+
+<h2>Overlay sources</h2>
+<div class="card">
+  <label>Twitch channel — chat needs only this, nothing else</label>
+  <input id="channel" placeholder="your_login_name" autocomplete="off" spellcheck="false">
+
+  <div class="row">
+    <div>
+      <label>Twitch client ID</label>
+      <input id="clientId" placeholder="for viewer count + follows" autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label>Twitch token</label>
+      <input id="token" type="password" placeholder="from token.html" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>YouTube channel ID</label>
+      <input id="channelId" placeholder="UC…" autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label>YouTube API key</label>
+      <input id="apiKey" type="password" placeholder="Data API v3 key" autocomplete="off">
+    </div>
+  </div>
+
+  <label>YouTube OAuth token — only for YouTube chat messages</label>
+  <input id="accessToken" type="password" placeholder="optional" autocomplete="off">
+
+  <div class="bar">
+    <button class="go" id="save">Save &amp; reload sources</button>
+    <button id="openChat">Open chat window</button>
+    <button id="openToken">Get a Twitch token</button>
+  </div>
+  <p class="hint">Saving writes <code>overlays/config.js</code> and reloads the OBS browser
+  sources, which otherwise serve a cached copy.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const FIELDS = ["channel", "clientId", "token", "channelId", "apiKey", "accessToken"];
+let DAY = null;
+let TEMPLATE = "Day {day} | Vibe Coding My Startup | {desc}";
+
+function toast(msg, err) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "toast on" + (err ? " err" : "");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => (t.className = "toast"), 3200);
+}
+
+function composed() {
+  const d = $("desc").value.trim();
+  if (DAY === null) return d;
+  return TEMPLATE.replace("{day}", DAY).replace("{desc}", d).trim();
+}
+
+function paintTitle() {
+  const t = composed();
+  $("preview").textContent = t || "…";
+  const n = t.length;
+  $("count").textContent = `${n} characters — YouTube cuts at 100, Twitch at 140`;
+  $("count").className = "count" + (n > 100 ? " over" : "");
+}
+$("desc").addEventListener("input", paintTitle);
+
+async function load() {
+  const day = await fetch("/api/day").then(r => r.json());
+  DAY = day.day;
+  if (day.template) TEMPLATE = day.template;
+  paintTitle();
+
+  const s = await fetch("/api/overlays").then(r => r.json());
+  for (const f of FIELDS) if (s[f] !== undefined) $(f).value = s[f];
+
+  paintStatus(s);
+  const st = await fetch("/api/status").then(r => r.json()).catch(() => null);
+  paintStatus(s, st);
+}
+
+function paintStatus(s, st) {
+  const rows = [];
+  const add = (state, name, note) =>
+    rows.push(`<div class="st"><span class="pip ${state}"></span><b>${name}</b><span>${note}</span></div>`);
+
+  add(s.channel ? "on" : "off", "Twitch chat",
+      s.channel ? `reading #${s.channel}` : "no channel set — chat will be empty");
+  add(s.clientId && s.token ? "on" : "off", "Viewer count",
+      s.clientId && s.token ? "ready" : "needs client ID + token");
+  add(s.channelId && s.apiKey ? "on" : "warn", "YouTube stats",
+      s.channelId && s.apiKey ? "ready" : "needs channel ID + API key");
+  add(s.accessToken ? "on" : "warn", "YouTube chat",
+      s.accessToken ? "ready" : "optional — needs an OAuth token");
+
+  if (st) {
+    for (const p of ["twitch", "youtube"]) {
+      const v = st[p] || {};
+      add(v.connected ? "on" : "off", p[0].toUpperCase() + p.slice(1) + " title API",
+          v.connected ? (v.name || "connected")
+                      : v.unconfigured ? "no app credentials in config.json" : "not connected");
+    }
+  }
+  $("status").innerHTML = rows.join("");
+}
+
+$("save").onclick = async () => {
+  const body = { refresh: true };
+  for (const f of FIELDS) body[f] = $(f).value.trim();
+  $("save").disabled = true;
+  try {
+    const r = await fetch("/api/overlays", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    }).then(r => r.json());
+    toast(r.ok ? "Saved and sources reloaded" : "Failed: " + (r.error || "?"), !r.ok);
+    if (r.ok) load();
+  } catch (e) { toast("Failed: " + e.message, true); }
+  $("save").disabled = false;
+};
+
+async function push(targets) {
+  const desc = $("desc").value.trim();
+  if (!desc) return toast("Write a description first", true);
+  const body = { desc, description: $("ytdesc").value, targets };
+  try {
+    const r = await fetch("/api/update", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    }).then(r => r.json());
+    const bad = Object.entries(r).filter(([, v]) => !v.ok);
+    toast(bad.length ? bad.map(([k, v]) => `${k}: ${v.error}`).join(" · ") : "Title set",
+          bad.length > 0);
+  } catch (e) { toast("Failed: " + e.message, true); }
+}
+$("push").onclick   = () => push(["twitch", "youtube"]);
+$("pushTw").onclick = () => push(["twitch"]);
+$("pushYt").onclick = () => push(["youtube"]);
+
+$("openChat").onclick  = () => window.open("/overlays/chatwindow.html", "_blank");
+$("openToken").onclick = () => window.open("/overlays/token.html", "_blank");
+
+load();
+setInterval(load, 20000);
+</script>
+</body>
+</html>
