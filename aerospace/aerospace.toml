@@ -77,6 +77,7 @@ automatically-unhide-macos-hidden-apps = true
     cmd-q = 'exec-and-forget true'
     ctrl-q = 'close --quit-if-last-window'
     ctrl-shift-f = 'exec-and-forget open -na Figma'
+    ctrl-c = 'exec-and-forget open -na "T3 Code (Alpha)"'
 
     # OBS scenes and camera controls. Control is the SUPER key in this config.
     ctrl-alt-0 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene start'
