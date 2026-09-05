@@ -71,7 +71,7 @@ automatically-unhide-macos-hidden-apps = true
     # Apps
     ctrl-enter = 'exec-and-forget open -na Ghostty'
     ctrl-shift-t = 'exec-and-forget /Users/christianaguilar/.config/aerospace/launch-agent-grid.sh'
-    ctrl-b = 'exec-and-forget open -na Safari'
+    ctrl-b = 'exec-and-forget open -na Helium --args --new-window'
     ctrl-m = 'exec-and-forget open -na "Beeper Desktop"'
     # Disable accidental app quits via Command-Q; Control-Q remains the intentional quit shortcut.
     cmd-q = 'exec-and-forget true'
@@ -91,7 +91,8 @@ automatically-unhide-macos-hidden-apps = true
     ctrl-alt-m = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs marker MARK'
     ctrl-alt-n = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs camera next'
     ctrl-alt-shift-n = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs camera prev'
-    ctrl-alt-s = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs iphone'
+    ctrl-alt-s = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs stream toggle'
+    ctrl-alt-p = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs iphone'
     # Panic button: pixelate every screen capture on stream, banner it, and
     # turn the whole bar blood red until it is switched back off.
     ctrl-alt-b = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs blur toggle'
