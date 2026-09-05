@@ -44,7 +44,26 @@ automatically-unhide-macos-hidden-apps = true
 # otherwise skip the on-focus-changed pass. dwindle.sh self-locks, so the two
 # triggers firing together for one window is harmless.
 [[on-window-detected]]
+    check-further-callbacks = true
     run = ['exec-and-forget /Users/christianaguilar/.config/aerospace/dwindle.sh']
+
+# Home workspaces. Apps land in the same place however they were launched --
+# from a keybind, from Spotlight, or by another app.
+[[on-window-detected]]
+    if.app-id = 'com.mitchellh.ghostty'
+    run = ['move-node-to-workspace 1']
+
+[[on-window-detected]]
+    if.app-id = 'com.t3tools.t3code'
+    run = ['move-node-to-workspace 1']
+
+[[on-window-detected]]
+    if.app-id = 'net.imput.helium'
+    run = ['move-node-to-workspace 2']
+
+[[on-window-detected]]
+    if.app-id = 'com.obsproject.obs-studio'
+    run = ['move-node-to-workspace 4']
 
 [gaps]
     inner.horizontal = 8
@@ -69,15 +88,18 @@ automatically-unhide-macos-hidden-apps = true
 
 [mode.main.binding]
     # Apps
-    ctrl-enter = 'exec-and-forget open -na Ghostty'
+    ctrl-enter = ['workspace 1', 'exec-and-forget open -na Ghostty']
     ctrl-shift-t = 'exec-and-forget /Users/christianaguilar/.config/aerospace/launch-agent-grid.sh'
-    ctrl-b = 'exec-and-forget open -na Helium --args --new-window'
+    ctrl-b = ['workspace 2', 'exec-and-forget open -na Helium --args --new-window']
     ctrl-m = 'exec-and-forget open -na "Beeper Desktop"'
     # Disable accidental app quits via Command-Q; Control-Q remains the intentional quit shortcut.
     cmd-q = 'exec-and-forget true'
     ctrl-q = 'close --quit-if-last-window'
     ctrl-shift-f = 'exec-and-forget open -na Figma'
-    ctrl-c = 'exec-and-forget open -na "T3 Code (Alpha)"'
+
+    # Blurred keybinding overlay, generated from this file at press time.
+    ctrl-shift-slash = 'exec-and-forget /Users/christianaguilar/.config/aerospace/keys.sh'
+    ctrl-c = ['workspace 1', 'exec-and-forget open -na "T3 Code (Alpha)"']
 
     # OBS scenes and camera controls. Control is the SUPER key in this config.
     ctrl-alt-0 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs scene start'
