@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Helium Geo test</title>
+<style>body{font:14px/1.6 system-ui;padding:24px;max-width:640px}
+pre{background:#0001;padding:12px;border-radius:8px;white-space:pre-wrap}
+button{font:inherit;padding:6px 12px;margin-right:8px}</style>
+<h1>Helium Geo test</h1>
+<button id="once">getCurrentPosition</button>
+<button id="watch">watchPosition</button>
+<button id="stop">clearWatch</button>
+<pre id="out">ready</pre>
+<script>
+const out = document.getElementById('out');
+const log = o => out.textContent = JSON.stringify(o, null, 2);
+let id = null;
+const show = p => log({
+  latitude: p.coords.latitude, longitude: p.coords.longitude,
+  accuracy: p.coords.accuracy, timestamp: new Date(p.timestamp).toISOString(),
+  timezoneOffset: new Date().getTimezoneOffset(),
+  intlTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  toStringLooksNative: navigator.geolocation.getCurrentPosition.toString(),
+});
+document.getElementById('once').onclick = () =>
+  navigator.geolocation.getCurrentPosition(show, e => log({ error: e.message, code: e.code }));
+document.getElementById('watch').onclick = () => {
+  if (id !== null) navigator.geolocation.clearWatch(id);
+  id = navigator.geolocation.watchPosition(show, e => log({ error: e.message }));
+  out.textContent = 'watching, id=' + id;
+};
+document.getElementById('stop').onclick = () => {
+  if (id !== null) { navigator.geolocation.clearWatch(id); out.textContent = 'cleared ' + id; id = null; }
+};
+navigator.permissions.query({ name: 'geolocation' }).then(s => console.log('permission:', s.state));
+</script>

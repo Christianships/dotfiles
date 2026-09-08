@@ -1,0 +1,47 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Helium Geo</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 13px/1.4 -apple-system, system-ui, sans-serif; width: 268px; margin: 0; padding: 12px; }
+  h1 { font-size: 13px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #999; }
+  .dot.on { background: #16a34a; }
+  label { display: block; margin: 8px 0 3px; font-size: 11px; opacity: .7; }
+  select, input { width: 100%; box-sizing: border-box; padding: 5px 6px; font: inherit;
+                  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+                  border-radius: 6px; background: transparent; color: inherit; }
+  .row { display: flex; gap: 8px; }
+  .row > div { flex: 1; }
+  .check { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12px; }
+  .check input { width: auto; }
+  button { width: 100%; margin-top: 12px; padding: 7px; font: inherit; font-weight: 600;
+           border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
+  button.off { background: #6b7280; }
+  .note { margin-top: 9px; font-size: 10.5px; opacity: .6; }
+  #saved { font-size: 11px; opacity: 0; transition: opacity .15s; text-align: center; margin-top: 6px; }
+  #saved.show { opacity: .7; }
+</style>
+<h1><span class="dot" id="dot"></span> Helium Geo</h1>
+
+<label for="preset">City</label>
+<select id="preset"></select>
+
+<div class="row">
+  <div><label for="lat">Latitude</label><input id="lat" type="number" step="any"></div>
+  <div><label for="lng">Longitude</label><input id="lng" type="number" step="any"></div>
+</div>
+
+<div class="row">
+  <div><label for="accuracy">Accuracy (m)</label><input id="accuracy" type="number" min="1" step="1"></div>
+  <div><label for="jitter">Jitter (m)</label><input id="jitter" type="number" min="0" step="1"></div>
+</div>
+
+<label class="check"><input type="checkbox" id="spoofTimezone"> Also spoof timezone</label>
+<input id="tz" placeholder="America/Los_Angeles">
+
+<button id="toggle">Enable</button>
+<div id="saved">saved — reload the page</div>
+<div class="note">Changes apply to pages loaded after saving. This spoofs the JS geolocation API only — sites that geolocate by IP need a VPN/proxy.</div>
+
+<script src="popup.js"></script>
