@@ -6,8 +6,8 @@
 background-blur = macos-glass-regular
 background-opacity = 0.86
 macos-titlebar-style = hidden
-background = #080d14
-foreground = #e6edf7
+background = #0b0713
+foreground = #ece4fb
 
 # Font and spacing.
 font-family = JetBrainsMono Nerd Font
@@ -20,15 +20,18 @@ window-padding-balance = true
 
 # Cursor and selection.
 cursor-style = block
-cursor-style-blink = true
-cursor-color = #c084fc
-cursor-text = #080d14
+# Cursor shaders need this OFF. A blinking cursor resets the shader's cursor
+# state on every blink, so trails/smears never get to play out -- they flicker
+# or never appear at all. Set back to true if you drop cursor shaders.
+cursor-style-blink = false
+cursor-color = #c9a4ff
+cursor-text = #140d20
 # Stop shell integration from swapping in a thin/hollow cursor at the
 # zsh prompt — keep the real block+blink cursor everywhere, including
 # inside TUI apps like Claude Code.
 shell-integration-features = no-cursor
-selection-background = #3b2a57
-selection-foreground = #f8fafc
+selection-background = #3a2a5c
+selection-foreground = #ece4fb
 minimum-contrast = 3
 
 # Keep inactive splits visible without making them compete for attention.
@@ -54,22 +57,22 @@ keybind = ctrl+shift+z=toggle_split_zoom
 keybind = ctrl+shift+g=new_split:down
 
 # High-contrast ANSI colors for AI CLIs, git, shells, and Markdown renderers.
-palette = 0=#111827
+palette = 0=#1c1430
 palette = 1=#ff6b8a
-palette = 2=#7ee787
-palette = 3=#ffd166
-palette = 4=#a78bfa
-palette = 5=#d2a8ff
-palette = 6=#d8b4fe
-palette = 7=#d6deeb
-palette = 8=#64748b
+palette = 2=#6ee7a0
+palette = 3=#ffd479
+palette = 4=#b79dff
+palette = 5=#a855f7
+palette = 6=#5ee6e6
+palette = 7=#c7b8e6
+palette = 8=#4a3d63
 palette = 9=#ff8fa3
-palette = 10=#9ff5b4
-palette = 11=#ffe08a
-palette = 12=#c084fc
-palette = 13=#e0b7ff
-palette = 14=#e879f9
-palette = 15=#ffffff
+palette = 10=#8df3b8
+palette = 11=#ffe3a0
+palette = 12=#c9a4ff
+palette = 13=#e879f9
+palette = 14=#8ff5f5
+palette = 15=#ece4fb
 
 confirm-close-surface = false
 
@@ -78,4 +81,7 @@ confirm-close-surface = false
 # without rewriting this config. `gshader` lists/cycles/picks; Cmd+Shift+,
 # reloads. Shaders themselves are in ./shaders/.
 config-file = shader.conf
-custom-shader-animation = true
+# `always` rather than `true`: with `true` Ghostty stops animating the shader
+# when the surface is not actively focused, which makes cursor trails stutter
+# or drop frames. `always` keeps the animation clock running.
+custom-shader-animation = always
