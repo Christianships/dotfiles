@@ -78,6 +78,11 @@ const float DURATION = 0.3; //IN SECONDS
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy);
+    // Trail finished: pass the frame through untouched. Without this the final
+    // smoothstep(0., sdfCurrentCursor, 0.) divides 0/0 on the cursor's edge
+    // pixels, which leaves a stray purple line on the resting cursor -- and the
+    // whole trail maths ran on every pixel of every frame for nothing.
+    if (iTime - iTimeCursorChange >= DURATION) return;
     // Normalization for fragCoord to a space of -1 to 1;
     vec2 vu = norm(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);

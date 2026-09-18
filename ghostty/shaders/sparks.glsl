@@ -86,6 +86,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float fadeIn = smoothstep(0.0, fadeInTime, elapsed);
     float fadeOut = 1.0 - smoothstep(duration - fadeOutTime, duration, elapsed);
     float fade = clamp(fadeIn * fadeOut, 0.0, 1.0);
+    // Sparks are gone after `duration`: skip the 20-particle loop entirely.
+    // Otherwise it ran per pixel, per frame, forever -- the main GPU cost.
+    if (fade <= 0.0) return;
 
     vec2 center = norm(iCurrentCursor.xy, 1.);
     vec2 vu = norm(fragCoord, 1.);
