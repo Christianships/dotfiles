@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# CPU + RAM. Added in reverse visual order (right region stacks
-# right-to-left), so this renders as: cpu · mem.
+# TEMP + GPU + CPU + RAM. Added in reverse visual order (right region stacks
+# right-to-left), so this renders as: temp · gpu · cpu · mem.
 #
 # Neither item has a script or update_freq: plugins/stats-daemon.mjs owns
 # both, pushing a fresh reading every second. CPU has no instantaneous
@@ -27,7 +27,7 @@ sketchybar --add item cpu right \
     --set cpu \
         icon="$ICON_CPU" \
         icon.color="$W50" \
-        icon.padding_left=9 \
+        icon.padding_left=7 \
         icon.padding_right=5 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
@@ -36,7 +36,33 @@ sketchybar --add item cpu right \
         padding_right=1 \
         click_script="$PLUGIN_DIR/open_monitor.sh"
 
-sketchybar --add bracket system cpu mem \
+sketchybar --add item gpu right \
+    --set gpu \
+        icon="$ICON_GPU" \
+        icon.color="$W50" \
+        icon.padding_left=7 \
+        icon.padding_right=5 \
+        label="--" \
+        label.font="$FONT:SemiBold:12.0" \
+        label.color="$FG" \
+        label.padding_right=4 \
+        padding_right=1 \
+        click_script="$PLUGIN_DIR/open_monitor.sh"
+
+sketchybar --add item temp right \
+    --set temp \
+        icon="$ICON_TEMP" \
+        icon.color="$W50" \
+        icon.padding_left=9 \
+        icon.padding_right=4 \
+        label="--" \
+        label.font="$FONT:SemiBold:12.0" \
+        label.color="$FG" \
+        label.padding_right=4 \
+        padding_right=1 \
+        click_script="$PLUGIN_DIR/open_monitor.sh"
+
+sketchybar --add bracket system temp gpu cpu mem \
     --set system \
         background.color="$GLASS" \
         background.border_color="$EDGE_SOFT" \
