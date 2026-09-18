@@ -3,7 +3,10 @@
 # ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty
 
 # Liquid glass, tuned for readable text over transparency.
-background-blur = macos-glass-regular
+# Plain blur, not macos-glass-*: Apple's glass effect deliberately goes flat and
+# gray when its window loses focus, so unfocused windows looked different.
+# This blur looks the same focused or not. 20 = Ghostty's default radius.
+background-blur = 20
 background-opacity = 0.86
 macos-titlebar-style = hidden
 background = #0b0713
@@ -35,8 +38,8 @@ selection-foreground = #ece4fb
 minimum-contrast = 3
 
 # Keep inactive splits visible without making them compete for attention.
-unfocused-split-opacity = 0.58
-
+# 1 = unfocused splits are not dimmed at all; they look identical to the focused one.
+unfocused-split-opacity = 1
 # Pane workflow for working beside a running agent.
 # Command is left untouched for macOS/Ghostty defaults like Cmd+Enter fullscreen.
 # Ghostty sees your remapped Fn/Ctrl key as logical Control for these bindings.
