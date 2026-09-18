@@ -15,7 +15,7 @@
 
 import os from "node:os";
 import { execFile, spawn } from "node:child_process";
-import { writeFileSync, unlinkSync } from "node:fs";
+import { writeFileSync, unlinkSync, readFileSync } from "node:fs";
 
 const SKETCHYBAR = process.env.SKETCHYBAR_BIN || "/opt/homebrew/bin/sketchybar";
 const PID_FILE = "/tmp/sketchybar-stats-daemon.pid";
@@ -31,7 +31,7 @@ const W95 = "0xf2ffffff";
 // breaks out of the ramp into colour. This is CRITICAL from colors.sh (Apple's
 // system red), reused rather than a new red invented for one item.
 const RED = "0xffff453a";
-const TEMP_HOT = 90;   // °C -- M-series throttles around 100-110
+const TEMP_HOT = 65;   // °C -- red strictly ABOVE this
 
 const TOTAL_BYTES = os.totalmem();
 
@@ -155,9 +155,26 @@ function startMacmon() {
   });
 }
 
+// Single-instance guard. SketchyBar's hotload can run items/system.sh twice at
+// once (a file edit plus a manual --reload), and both copies then get past its
+// pkill and start a daemon. So the daemon enforces it itself: the PID file names
+// the one true daemon, the newest start claims it, and any daemon that finds
+// someone else's PID there exits on its next tick.
+function pidFileOwner() {
+  try { return Number(readFileSync(PID_FILE, "utf8").trim()) || null; } catch { return null; }
+}
+function shutdown() {
+  // Only remove the PID file if it is still ours; otherwise an old daemon
+  // being replaced would delete the new one's claim and take it down too.
+  if (pidFileOwner() === process.pid) { try { unlinkSync(PID_FILE); } catch {} }
+  try { macmon?.kill(); } catch {}
+  process.exit(0);
+}
+
 let last = null;
 
 async function tick() {
+  if (pidFileOwner() !== process.pid) return shutdown();   // superseded
   const cpu = cpuPercent();
   const [mem, gpu] = await Promise.all([readMemory(), readGpu()]);
   const args = [];
@@ -166,11 +183,14 @@ async function tick() {
   // a few degrees below it under normal load.
   if (temps && Number.isFinite(temps.cpu)) {
     const c = Math.round(temps.cpu);
-    const hot = c >= TEMP_HOT;
+    const hot = c > TEMP_HOT;
     // When hot, the number goes red too, not just the icon -- a red glyph
     // beside a white number is easy to miss at a glance. label.color is set on
     // every tick, not only when hot, so it resets itself on the way back down.
-    const color = hot ? RED : c >= 75 ? W80 : c >= 60 ? W65 : W50;
+    // With red starting above 65, the old 75° brightness step can never be
+    // reached, so the white ramp is just: dim, then brighter from 60° as a
+    // "warming up" hint before it turns red.
+    const color = hot ? RED : c >= 60 ? W65 : W50;
     args.push(
       "--set", "temp",
       `label=${c}°`,
@@ -199,14 +219,13 @@ async function tick() {
   execFile(SKETCHYBAR, args, () => {});
 }
 
-writeFileSync(PID_FILE, String(process.pid));
-for (const sig of ["SIGTERM", "SIGINT", "SIGHUP"]) {
-  process.on(sig, () => {
-    try { unlinkSync(PID_FILE); } catch {}
-    try { macmon?.kill(); } catch {}
-    process.exit(0);
-  });
+// Stop the previous daemon (if it is still alive), then claim the PID file.
+const previous = pidFileOwner();
+if (previous && previous !== process.pid) {
+  try { process.kill(previous, "SIGTERM"); } catch {}
 }
+writeFileSync(PID_FILE, String(process.pid));
+for (const sig of ["SIGTERM", "SIGINT", "SIGHUP"]) process.on(sig, shutdown);
 
 // First diff needs a baseline interval, so wait one tick before reporting.
 startMacmon();
