@@ -1,0 +1,58 @@
+// Zed settings. Transparency is set up to match Ghostty.
+{
+  "icon_theme": {
+    "mode": "dark",
+    "light": "Zed (Default)",
+    "dark": "Zed (Default)"
+  },
+  "agent_servers": {
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "base_keymap": "Zed",
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "theme": {
+    "mode": "dark",
+    "light": "One Light",
+    "dark": "One Dark"
+  },
+
+  "theme_overrides": {
+    "One Dark": {
+      // "blurred" = see-through window with the desktop blurred behind it,
+      // the same idea as Ghostty's background-blur.
+      "background.appearance": "blurred",
+
+      // The ONE tinted layer: Ghostty's background colour #0b0713 at Ghostty's
+      // opacity (0.38 ~= hex 61). Everything below is fully clear so it sits on
+      // this tint; giving each layer its own alpha would stack them darker.
+      "background": "#0b071361",
+      "editor.background": "#00000000",
+      "editor.gutter.background": "#00000000",
+      "panel.background": "#00000000",
+      "surface.background": "#00000000",
+      "toolbar.background": "#00000000",
+      "tab_bar.background": "#00000000",
+      "tab.inactive_background": "#00000000",
+      "status_bar.background": "#00000000",
+      "terminal.background": "#00000000",
+
+      // Same look focused or unfocused, like Ghostty now.
+      "title_bar.background": "#00000000",
+      "title_bar.inactive_background": "#00000000",
+
+      // A little purple tint where something needs to stand out.
+      "tab.active_background": "#3a2a5c66",
+      "editor.active_line.background": "#1c143080",
+      "border": "#3d2f5c",
+      "border.variant": "#2b2040",
+
+      // Popups (command palette, completions, hover) stay nearly solid so
+      // text over busy code behind them stays readable.
+      "elevated_surface.background": "#140d20ee"
+    }
+  }
+}
