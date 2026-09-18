@@ -1,5 +1,26 @@
 // Zed settings. Transparency is set up to match Ghostty.
 {
+  "markdown_preview": {
+    "code_font_family": "GohuFont uni14 Nerd Font Mono"
+  },
+  "auto_update": false,
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "dock": "left"
+  },
+  "agent": {
+    "dock": "right",
+    "favorite_models": [],
+    "model_parameters": []
+  },
+  "git_panel": {
+    "dock": "left"
+  },
   "icon_theme": {
     "mode": "dark",
     "light": "Zed (Default)",
@@ -11,6 +32,8 @@
     }
   },
   "base_keymap": "Zed",
+  // Built-in Vim emulation (Zed's equivalent of an nvim extension).
+  "vim_mode": true,
   "session": {
     "trust_all_worktrees": true
   },
@@ -22,13 +45,8 @@
 
   "theme_overrides": {
     "One Dark": {
-      // "blurred" = see-through window with the desktop blurred behind it,
-      // the same idea as Ghostty's background-blur.
+      // Frosted-glass blur behind the window, tinted with Ghostty's #0b0713.
       "background.appearance": "blurred",
-
-      // The ONE tinted layer: Ghostty's background colour #0b0713 at Ghostty's
-      // opacity (0.38 ~= hex 61). Everything below is fully clear so it sits on
-      // this tint; giving each layer its own alpha would stack them darker.
       "background": "#0b071361",
       "editor.background": "#00000000",
       "editor.gutter.background": "#00000000",
