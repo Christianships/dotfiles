@@ -84,7 +84,6 @@ confirm-close-surface = false
 # without rewriting this config. `gshader` lists/cycles/picks; Cmd+Shift+,
 # reloads. Shaders themselves are in ./shaders/.
 config-file = shader.conf
-# `always` rather than `true`: with `true` Ghostty stops animating the shader
-# when the surface is not actively focused, which makes cursor trails stutter
-# or drop frames. `always` keeps the animation clock running.
-custom-shader-animation = always
+# `true` animates only while the window is focused. `always` kept redrawing
+# every frame even in the background, which pinned the GPU for no visible gain.
+custom-shader-animation = true
