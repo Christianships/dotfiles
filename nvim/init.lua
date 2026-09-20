@@ -1290,6 +1290,21 @@ require("lazy").setup({
       "nvim-tree/nvim-web-devicons",
     },
   },
+  -- Real Material Icon Theme assets (the VS Code one), rendered as actual
+  -- images through Ghostty's graphics protocol rather than Nerd Font glyphs.
+  -- `build` downloads the theme; needs ImageMagick for the SVG conversion.
+  -- Integrations are opt-in, so only the three we actually use are on.
+  {
+    "Mirsmog/real-icons.nvim",
+    build = ":RealIcons install",
+    opts = {
+      integrations = {
+        oil = true,
+        snacks_picker = true,
+        lualine = true,
+      },
+    },
+  },
   {
     "folke/todo-comments.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
