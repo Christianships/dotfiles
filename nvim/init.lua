@@ -43,7 +43,7 @@ local palette = {
   fg      = "#ece4fb",
   fg_dim  = "#c7b8e6",
   muted   = "#7c6a9c",
-  comment = "#8f7fb5",
+  comment = "#FF9500", -- bright orange: comments should be unmissable
   ink     = "#140d20", -- dark text that sits on a bright accent
 
   -- The purple family — the spine of the theme
@@ -210,6 +210,9 @@ local function apply_coding_highlights()
     ["@number"]                = { fg = p.orange },
     ["@boolean"]               = { fg = p.orange, bold = true },
     ["@comment"]               = { fg = p.comment, italic = true },
+    ["@comment.documentation"]  = { fg = p.comment, italic = true },
+    ["@lsp.type.comment"]       = { fg = p.comment, italic = true },
+    SpecialComment              = { fg = p.comment, italic = true },
     ["@tag"]                   = { fg = p.magenta },
     ["@tag.attribute"]         = { fg = p.orange, italic = true },
     ["@tag.delimiter"]         = { fg = p.muted },
@@ -338,6 +341,21 @@ vim.opt.clipboard = "unnamedplus"  -- yank/paste uses your system clipboard
 -- ── UNDO ─────────────────────────────────────────────────────
 vim.opt.undofile = true        -- persist undo history between sessions
 vim.opt.undodir  = vim.fn.stdpath("cache") .. "/undo"
+
+-- ── SWAP FILES ───────────────────────────────────────────────
+-- Answer the "swap file already exists" prompt with (E)dit anyway, always.
+-- Nearly every one of these is a ghost: a session that was killed rather than
+-- quit leaves its .swp behind, and nvim then flags it forever even though the
+-- owning process is long gone. undofile above is the real safety net.
+--
+-- The tradeoff, stated plainly: if the same file genuinely IS open in another
+-- live nvim, this no longer warns you, and the last one to write wins.
+vim.api.nvim_create_autocmd("SwapExists", {
+  group = vim.api.nvim_create_augroup("SwapSkipPrompt", { clear = true }),
+  callback = function()
+    vim.v.swapchoice = "e"
+  end,
+})
 
 -- ── PERFORMANCE / FEEL ───────────────────────────────────────
 vim.opt.updatetime = 100       -- faster refresh (affects git signs, LSP later)
