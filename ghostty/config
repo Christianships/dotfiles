@@ -33,6 +33,10 @@ cursor-text = #140d20
 # zsh prompt — keep the real block+blink cursor everywhere, including
 # inside TUI apps like Claude Code.
 shell-integration-features = no-cursor
+# Hide the mouse pointer as soon as you type, so it stops sitting in the middle
+# of the text while you navigate nvim. A trackpad/mouse move brings it back.
+mouse-hide-while-typing = true
+
 selection-background = #3a2a5c
 selection-foreground = #ece4fb
 minimum-contrast = 3
