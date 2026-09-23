@@ -32,7 +32,7 @@ vim.opt.matchtime      = 2
 local palette = {
   -- Surfaces. bg = "none" everywhere the buffer shows through,
   -- so Ghostty's blur stays visible.
-  cursorline   = "#1c1430",
+  cursorline   = "#2a2a30", -- neutral gray bar under the cursor line
   visual       = "#3a2a5c",
   float        = "#1e1530",
   statusline_b = "#2a1f40",
@@ -43,7 +43,7 @@ local palette = {
   fg      = "#ece4fb",
   fg_dim  = "#c7b8e6",
   muted   = "#7c6a9c",
-  comment = "#FF9500", -- bright orange: comments should be unmissable
+  comment = "#727169", -- soft gray (Kanagawa fujiGray): comments recede
   ink     = "#140d20", -- dark text that sits on a bright accent
 
   -- The purple family — the spine of the theme
@@ -61,6 +61,68 @@ local palette = {
   orange = "#ff9e64",
   red    = "#ff6b8a",
 }
+
+
+-- The hand-painted syntax colours from before Kanagawa. Kanagawa now owns the
+-- token colours; flip this to true to take them back.
+local use_custom_syntax = false
+
+local function custom_syntax_highlights()
+  local p = palette
+  return {
+    Delimiter                  = { fg = p.lavender },
+    Identifier                 = { fg = p.fg },
+    Function                   = { fg = p.purple_lt },
+    Statement                  = { fg = p.magenta },
+    Keyword                    = { fg = p.magenta },
+    Conditional                = { fg = p.magenta },
+    Repeat                     = { fg = p.magenta },
+    Operator                   = { fg = p.pink },
+    Type                       = { fg = p.cyan },
+    String                     = { fg = p.green },
+    Character                  = { fg = p.green },
+    Number                     = { fg = p.orange },
+    Boolean                    = { fg = p.orange, bold = true },
+    Float                      = { fg = p.orange },
+    Constant                   = { fg = p.orange },
+    PreProc                    = { fg = p.purple },
+    Special                    = { fg = p.pink },
+    Todo                       = { fg = p.ink, bg = p.yellow, bold = true },
+    Error                      = { fg = p.red, bold = true },
+    ["@punctuation.bracket"]   = { fg = p.lavender },
+    ["@punctuation.delimiter"] = { fg = p.muted },
+    ["@punctuation.special"]   = { fg = p.pink },
+    ["@constructor"]           = { fg = p.cyan },
+    ["@variable"]              = { fg = p.fg },
+    ["@variable.builtin"]      = { fg = p.pink, italic = true },
+    ["@variable.member"]       = { fg = p.fg_dim },
+    ["@variable.parameter"]    = { fg = p.orange, italic = true },
+    ["@property"]              = { fg = p.fg_dim },
+    ["@function"]              = { fg = p.purple_lt },
+    ["@function.builtin"]      = { fg = p.purple_lt, italic = true },
+    ["@function.call"]         = { fg = p.purple_lt },
+    ["@function.method"]       = { fg = p.purple_lt },
+    ["@keyword"]               = { fg = p.magenta },
+    ["@keyword.return"]        = { fg = p.magenta, bold = true },
+    ["@keyword.import"]        = { fg = p.purple },
+    ["@type"]                  = { fg = p.cyan },
+    ["@type.builtin"]          = { fg = p.cyan, italic = true },
+    ["@string"]                = { fg = p.green },
+    ["@string.escape"]         = { fg = p.pink, bold = true },
+    ["@number"]                = { fg = p.orange },
+    ["@boolean"]               = { fg = p.orange, bold = true },
+    ["@comment"]               = { fg = p.comment, italic = true },
+    ["@comment.documentation"]  = { fg = p.comment, italic = true },
+    ["@lsp.type.comment"]       = { fg = p.comment, italic = true },
+    SpecialComment              = { fg = p.comment, italic = true },
+    ["@tag"]                   = { fg = p.magenta },
+    ["@tag.attribute"]         = { fg = p.orange, italic = true },
+    ["@tag.delimiter"]         = { fg = p.muted },
+    ["@module"]                = { fg = p.lavender },
+    ["@lsp.type.namespace"]    = { fg = p.lavender },
+
+  }
+end
 
 local function apply_coding_highlights()
   local p = palette
@@ -167,59 +229,8 @@ local function apply_coding_highlights()
     DiffviewFilePanelCounter  = { fg = p.magenta, bold = true },
     DiffviewNormal            = { bg = none },
 
-    -- Syntax / treesitter
-    Delimiter                  = { fg = p.lavender },
-    Identifier                 = { fg = p.fg },
-    Function                   = { fg = p.purple_lt },
-    Statement                  = { fg = p.magenta },
-    Keyword                    = { fg = p.magenta },
-    Conditional                = { fg = p.magenta },
-    Repeat                     = { fg = p.magenta },
-    Operator                   = { fg = p.pink },
-    Type                       = { fg = p.cyan },
-    String                     = { fg = p.green },
-    Character                  = { fg = p.green },
-    Number                     = { fg = p.orange },
-    Boolean                    = { fg = p.orange, bold = true },
-    Float                      = { fg = p.orange },
-    Constant                   = { fg = p.orange },
-    PreProc                    = { fg = p.purple },
-    Special                    = { fg = p.pink },
-    Todo                       = { fg = p.ink, bg = p.yellow, bold = true },
-    Error                      = { fg = p.red, bold = true },
-    ["@punctuation.bracket"]   = { fg = p.lavender },
-    ["@punctuation.delimiter"] = { fg = p.muted },
-    ["@punctuation.special"]   = { fg = p.pink },
-    ["@constructor"]           = { fg = p.cyan },
-    ["@variable"]              = { fg = p.fg },
-    ["@variable.builtin"]      = { fg = p.pink, italic = true },
-    ["@variable.member"]       = { fg = p.fg_dim },
-    ["@variable.parameter"]    = { fg = p.orange, italic = true },
-    ["@property"]              = { fg = p.fg_dim },
-    ["@function"]              = { fg = p.purple_lt },
-    ["@function.builtin"]      = { fg = p.purple_lt, italic = true },
-    ["@function.call"]         = { fg = p.purple_lt },
-    ["@function.method"]       = { fg = p.purple_lt },
-    ["@keyword"]               = { fg = p.magenta },
-    ["@keyword.return"]        = { fg = p.magenta, bold = true },
-    ["@keyword.import"]        = { fg = p.purple },
-    ["@type"]                  = { fg = p.cyan },
-    ["@type.builtin"]          = { fg = p.cyan, italic = true },
-    ["@string"]                = { fg = p.green },
-    ["@string.escape"]         = { fg = p.pink, bold = true },
-    ["@number"]                = { fg = p.orange },
-    ["@boolean"]               = { fg = p.orange, bold = true },
-    ["@comment"]               = { fg = p.comment, italic = true },
-    ["@comment.documentation"]  = { fg = p.comment, italic = true },
-    ["@lsp.type.comment"]       = { fg = p.comment, italic = true },
-    SpecialComment              = { fg = p.comment, italic = true },
-    ["@tag"]                   = { fg = p.magenta },
-    ["@tag.attribute"]         = { fg = p.orange, italic = true },
-    ["@tag.delimiter"]         = { fg = p.muted },
-    ["@module"]                = { fg = p.lavender },
-    ["@lsp.type.namespace"]    = { fg = p.lavender },
-
-    -- Brackets: a purple-led gradient instead of a rainbow
+    -- Brackets: a purple-led gradient, kept as part of the UI identity
+    -- rather than the syntax colourway.
     RainbowDelimiterRed    = { fg = p.purple,    bold = true },
     RainbowDelimiterYellow = { fg = p.magenta,   bold = true },
     RainbowDelimiterBlue   = { fg = p.pink,      bold = true },
@@ -277,6 +288,18 @@ local function apply_coding_highlights()
     RenderMarkdownCode = { bg = "#1a1228" },
     RenderMarkdownBullet = { fg = p.purple },
   }
+
+  if use_custom_syntax then
+    for group, opts in pairs(custom_syntax_highlights()) do
+      highlights[group] = opts
+    end
+  end
+
+  -- Comments stay gray regardless of colourscheme, so they sit quietly
+  -- behind the code.
+  for _, g in ipairs({ "Comment", "@comment", "@comment.documentation", "@lsp.type.comment", "SpecialComment" }) do
+    highlights[g] = { fg = p.comment, italic = true }
+  end
 
   for group, opts in pairs(highlights) do
     vim.api.nvim_set_hl(0, group, opts)
@@ -888,19 +911,37 @@ local lsp_servers = {
 }
 
 require("lazy").setup({
-  -- Cursor/VS Code style coding colors
+  -- Kanagawa: ink-wash colourway modelled on a Hokusai woodblock. Desaturated
+  -- violet keywords, moss strings, chalk-blue functions, muted aqua types.
+  --
+  -- transparent = true is the point: Kanagawa never paints a background, so
+  -- Ghostty's #0b0713 and its blur show through exactly as before. The
+  -- bg = none overrides in apply_coding_highlights() cover the plugin
+  -- surfaces Kanagawa's own transparency does not reach.
   {
-    "Mofiqul/vscode.nvim",
+    "rebelot/kanagawa.nvim",
     lazy = false,
     priority = 1100,
     config = function()
-      require("vscode").setup({
-        style = "dark",
+      require("kanagawa").setup({
+        theme = "wave",
+        background = { dark = "wave" },
         transparent = true,
-        italic_comments = true,
-        terminal_colors = true,
+        dimInactive = false,
+        commitStyle    = { italic = true },
+        keywordStyle   = { italic = false, bold = true },
+        statementStyle = { bold = true },
+        colors = {
+          theme = {
+            all = {
+              ui = {
+                bg_gutter = "none",  -- keep the sign column transparent too
+              },
+            },
+          },
+        },
       })
-      vim.cmd.colorscheme("vscode")
+      vim.cmd.colorscheme("kanagawa")
       apply_coding_highlights()
     end,
   },
