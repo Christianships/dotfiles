@@ -259,12 +259,29 @@ local function apply_coding_highlights()
     SnacksNotifierError     = { fg = p.red },
     SnacksInputBorder       = { fg = p.purple },
 
+    -- Start screen
+    SnacksDashboardHeader   = { fg = p.purple_lt },
+    SnacksDashboardIcon     = { fg = p.purple },
+    SnacksDashboardDesc     = { fg = p.fg },
+    SnacksDashboardKey      = { fg = p.muted },
+    SnacksDashboardFooter   = { fg = p.muted, italic = true },
+    SnacksDashboardSpecial  = { fg = p.lavender },
+
+    -- Breadcrumbs (dropbar) and outline (aerial)
+    WinBar                 = { fg = p.fg_dim, bg = none },
+    WinBarNC               = { fg = p.muted, bg = none },
+    DropBarIconUISeparator = { fg = p.muted },
+    DropBarMenuHoverEntry  = { bg = p.visual },
+    AerialLine             = { bg = p.visual },
+    AerialGuide            = { fg = p.indent },
+
     -- which-key
     WhichKey          = { fg = p.magenta, bold = true },
     WhichKeyGroup     = { fg = p.lavender },
     WhichKeyDesc      = { fg = p.fg_dim },
     WhichKeySeparator = { fg = p.muted },
-    WhichKeyFloat     = { bg = none },
+    WhichKeyFloat     = { bg = p.float }, -- bottom key panel
+    WhichKeyNormal    = { bg = p.float },
     WhichKeyBorder    = { fg = p.purple },
 
     -- Trouble / todo-comments
@@ -538,7 +555,22 @@ local controls_lines = {
   "  Space xq       quickfix list",
   "  Space st       TODO comments",
   "",
+  "IDE layout",
+  "  Shift-h / l    previous / next tab",
+  "  Space bp       pin tab",
+  "  Space bo       close other tabs",
+  "  Space bb       pick a tab",
+  "  Space .        file browser",
+  "  Space r        recent files",
+  "  Space cs       code outline sidebar",
+  "  Space u        undo tree",
+  "  ]] / [[        next / previous reference",
+  "  Space qs       restore session for this folder",
+  "  Space ql       restore last session",
+  "",
   "Plugin management",
+  "  Space L        :Lazy",
+  "  Space M        :Mason",
   "  :Lazy          manage plugins",
   "  :Mason         manage language servers and tools",
 }
@@ -859,7 +891,10 @@ map("n", "<leader>|", "<cmd>vsp<cr>", { desc = "Vertical split"   })
 map("n", "<leader>-", "<cmd>sp<cr>",  { desc = "Horizontal split" })
 
 -- Close current buffer
-map("n", "<leader>x", "<cmd>bdelete<cr>", { desc = "Close buffer" })
+map("n", "<leader>x", function() Snacks.bufdelete() end, { desc = "Close buffer" })
+map("n", "<leader>bd", function() Snacks.bufdelete() end, { desc = "Close tab" })
+map("n", "<leader>L", "<cmd>Lazy<cr>", { desc = "Lazy (plugins)" })
+map("n", "<leader>M", "<cmd>Mason<cr>", { desc = "Mason (language servers)" })
 
 -- Close the current split/pane without needing to remember :close
 map("n", "<leader>w", close_current_pane, { desc = "Close current pane" })
@@ -1153,6 +1188,7 @@ require("lazy").setup({
   {
     "folke/snacks.nvim",
     priority = 1000,
+    lazy = false, -- the start screen has to exist before the first buffer
     opts = {
       picker = {},
       explorer = {},
@@ -1160,8 +1196,51 @@ require("lazy").setup({
       lazygit = {},
       notifier = {},
       terminal = {},
+      bigfile = {},      -- turn heavy features off for huge files
+      quickfile = {},    -- draw `nvim file` before plugins finish loading
+      statuscolumn = {}, -- IDE gutter: signs, git, folds
+      words = {},        -- highlight references under the cursor
+      scroll = {},       -- smooth scrolling
+      dashboard = {
+        width = 64,
+        preset = {
+          header = [[
+⠀⠀⠀⠀⢠⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⡀⠀⠀⢶⣦⠺⣷⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣀⡀⠀⠀⠀⠀⠀
+⣀⣀⣀⣀⣸⣿⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡀⠀⠀⠈⢻⡧⠘⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡿⠀⠀⠀⠀⠀⠀
+⠛⠛⠛⠛⠛⠛⠛⢛⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠿⠿⠿⠿⠿⠿⢿⣿⣿⠿⠿⠿⠿⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠿⠿⠿⠿⠿⠿⠿⠿⠿⣿⡷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⡶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⠃⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⣠⣴⡿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⢿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣾⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⡏⠀⠀⢠⣴⡄⠀⠀
+⢀⣀⣤⣶⣿⣿⢿⣶⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣾⡟⠁⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠛⠀⠀⠀⠀⠀⠀⠀⢀⣾⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣶⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⡿⠀⠀⠀⠀⠹⣿⣆⠀
+⠿⠛⠋⠁⢸⣿⠀⠈⠙⠻⢿⣷⡤⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⠟⠁⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⡟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⠿⠛⠋⠁⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⠃⠀⠀⠀⠀⠀⢘⣿⣆
+⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠈⠁⠀⠀⠀⠀⠀⠀⠐⢿⠟⠋⠁⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣴⣿⠟⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⣴⣿⣷⣶⣶⣶⡿⠿⠿⠿⠛⣿
+⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠿⠛⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠘]],
+          -- stylua: ignore
+          keys = {
+            { icon = "\u{f07c} ", key = ".", desc = "> File Browser", action = function() Snacks.explorer() end },
+            { icon = "\u{f0214} ", key = "f", desc = "> Find File", action = ":lua Snacks.dashboard.pick('files')" },
+            { icon = "\u{f0c5} ", key = "r", desc = "> Recent Files", action = ":lua Snacks.dashboard.pick('oldfiles')" },
+            { icon = "\u{f002} ", key = "/", desc = "> Find Text", action = ":lua Snacks.dashboard.pick('live_grep')" },
+            { icon = "\u{f120} ", key = "t", desc = "> Terminal", action = function() Snacks.terminal.toggle() end },
+            { icon = "\u{f09b} ", key = "g", desc = "> Git", action = function() Snacks.lazygit() end },
+            { icon = "\u{f021} ", key = "s", desc = "> Restore Session", action = function() require("persistence").load() end },
+            { icon = "\u{f04b2} ", key = "l", desc = "> Lazy (Package Manager)", action = ":Lazy" },
+            { icon = "\u{f0ad} ", key = "m", desc = "> Mason (Language Servers)", action = ":Mason" },
+            { icon = "\u{f128} ", key = "?", desc = "> Help", action = function() show_nvim_controls() end },
+            { icon = "\u{f057} ", key = "q", desc = "> Quit NVIM", action = ":qa" },
+          },
+        },
+        sections = {
+          { section = "header", padding = 2 },
+          { section = "keys", gap = 1, padding = 2 },
+          { section = "startup" },
+        },
+      },
     },
     keys = {
+      { "<leader>.", function() Snacks.explorer() end, desc = "File browser" },
+      { "<leader>r", function() Snacks.picker.recent() end, desc = "Recent files" },
+      { "<leader>u", function() Snacks.picker.undo() end, desc = "Undo tree" },
+      { "]]", function() Snacks.words.jump(vim.v.count1) end, desc = "Next reference" },
+      { "[[", function() Snacks.words.jump(-vim.v.count1) end, desc = "Previous reference" },
       { "<leader><space>", function() Snacks.picker.files() end, desc = "Find files" },
       { "<leader>/", function() Snacks.picker.grep() end, desc = "Grep" },
       { "<leader>,", function() Snacks.picker.buffers() end, desc = "Buffers" },
@@ -1185,7 +1264,25 @@ require("lazy").setup({
   {
     "folke/which-key.nvim",
     event = "VeryLazy",
-    opts = {},
+    opts = {
+      preset = "classic", -- full-width panel along the bottom
+      delay = 250,
+      win = { border = "none", padding = { 1, 4 } },
+      layout = { spacing = 6 },
+      icons = { separator = "\u{2192}", group = "+", mappings = false },
+      spec = {
+        { "<leader>a", group = "AI" },
+        { "<leader>b", group = "Buffers / tabs" },
+        { "<leader>c", group = "Code" },
+        { "<leader>d", group = "Debug" },
+        { "<leader>g", group = "Git" },
+        { "<leader>o", group = "GitHub (Octo)" },
+        { "<leader>q", group = "Session" },
+        { "<leader>s", group = "Search" },
+        { "<leader>t", group = "Terminal" },
+        { "<leader>x", group = "Trouble" },
+      },
+    },
   },
   {
     "nvim-lualine/lualine.nvim",
@@ -1262,6 +1359,106 @@ require("lazy").setup({
       { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix" },
       { "grr", "<cmd>Trouble lsp_references toggle<cr>", desc = "References" },
     },
+  },
+
+  -- IDE chrome: tab bar, breadcrumbs, outline, sessions, auto pairs
+  {
+    "akinsho/bufferline.nvim",
+    version = "*",
+    event = "VeryLazy",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = function()
+      local p = palette
+      require("bufferline").setup({
+        options = {
+          mode = "buffers",
+          diagnostics = "nvim_lsp",
+          indicator = { style = "underline" },
+          separator_style = { "", "" },
+          show_buffer_close_icons = true,
+          always_show_bufferline = true,
+          close_command = function(n) Snacks.bufdelete(n) end,
+          right_mouse_command = function(n) Snacks.bufdelete(n) end,
+          diagnostics_indicator = function(_, _, diag)
+            local out = {}
+            if diag.error then table.insert(out, "\u{f057} " .. diag.error) end
+            if diag.warning then table.insert(out, "\u{f071} " .. diag.warning) end
+            return table.concat(out, " ")
+          end,
+          offsets = {
+            { filetype = "snacks_layout_box", text = "\u{f07c}  Explorer", highlight = "Directory", separator = false },
+            { filetype = "aerial", text = "\u{f0b1a}  Outline", highlight = "Directory", separator = false },
+          },
+        },
+        highlights = {
+          buffer_selected     = { fg = p.fg, bold = true, italic = false },
+          indicator_selected  = { fg = p.purple, sp = p.purple },
+          modified_selected   = { fg = p.magenta },
+          close_button_selected = { fg = p.pink },
+          pick_selected       = { fg = p.magenta, bold = true },
+          pick_visible        = { fg = p.magenta, bold = true },
+          pick                = { fg = p.magenta, bold = true },
+        },
+      })
+
+      -- Keep the tab bar see-through like the rest of the UI: strip every
+      -- BufferLine* background so Ghostty's blur shows behind it.
+      local function clear_bg()
+        for name in pairs(vim.api.nvim_get_hl(0, {})) do
+          if name:find("^BufferLine") then
+            local hl = vim.api.nvim_get_hl(0, { name = name, link = false })
+            hl.bg, hl.ctermbg = nil, nil
+            vim.api.nvim_set_hl(0, name, hl)
+          end
+        end
+      end
+      clear_bg()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = function() vim.schedule(clear_bg) end })
+    end,
+    keys = {
+      { "<S-h>", "<cmd>BufferLineCyclePrev<cr>", desc = "Previous tab" },
+      { "<S-l>", "<cmd>BufferLineCycleNext<cr>", desc = "Next tab" },
+      { "<leader>bp", "<cmd>BufferLineTogglePin<cr>", desc = "Pin tab" },
+      { "<leader>bP", "<cmd>BufferLineGroupClose ungrouped<cr>", desc = "Close unpinned tabs" },
+      { "<leader>bo", "<cmd>BufferLineCloseOthers<cr>", desc = "Close other tabs" },
+      { "<leader>bl", "<cmd>BufferLineCloseLeft<cr>", desc = "Close tabs to the left" },
+      { "<leader>br", "<cmd>BufferLineCloseRight<cr>", desc = "Close tabs to the right" },
+      { "<leader>bb", "<cmd>BufferLinePick<cr>", desc = "Pick a tab" },
+    },
+  },
+  {
+    "Bekaboo/dropbar.nvim", -- VS Code-style breadcrumbs along the top of each window
+    event = { "BufReadPost", "BufNewFile" },
+    opts = {},
+  },
+  {
+    "stevearc/aerial.nvim", -- code outline sidebar
+    dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+    cmd = { "AerialToggle", "AerialOpen" },
+    opts = {
+      backends = { "lsp", "treesitter", "markdown", "man" },
+      layout = { default_direction = "right", min_width = 30 },
+      show_guides = true,
+      filter_kind = false,
+    },
+    keys = {
+      { "<leader>cs", "<cmd>AerialToggle<cr>", desc = "Code outline" },
+    },
+  },
+  {
+    "folke/persistence.nvim", -- per-folder sessions (reopen your tabs and splits)
+    event = "BufReadPre",
+    opts = {},
+    keys = {
+      { "<leader>qs", function() require("persistence").load() end, desc = "Restore session (this folder)" },
+      { "<leader>ql", function() require("persistence").load({ last = true }) end, desc = "Restore last session" },
+      { "<leader>qd", function() require("persistence").stop() end, desc = "Don't save this session" },
+    },
+  },
+  {
+    "nvim-mini/mini.pairs", -- auto-close brackets and quotes
+    event = "InsertEnter",
+    opts = {},
   },
 
   -- Git and code review
