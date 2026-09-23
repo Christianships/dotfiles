@@ -63,9 +63,95 @@ local palette = {
 }
 
 
--- The hand-painted syntax colours from before Kanagawa. Kanagawa now owns the
--- token colours; flip this to true to take them back.
-local use_custom_syntax = false
+-- Who paints the code (token) colours:
+--   "mono"     monochrome: near-white code, gray keywords, blue-gray fields,
+--              dim comments, orange warnings (see mono_syntax_highlights)
+--   "purple"   the hand-painted palette from before Kanagawa
+--   "kanagawa" leave tokens to the Kanagawa colorscheme
+local syntax_style = "mono"
+
+-- Monochrome text palette; only syntax_style = "mono" uses it.
+local mono = {
+  bright  = "#ececec", -- identifiers, calls, the current line number
+  text    = "#d2d2d2", -- strings, types, modules
+  keyword = "#9a9a9a", -- local / if / then / end, operators, literals
+  field   = "#8792a2", -- .fn .loop .opt: members and properties, cool gray-blue
+  punct   = "#6e6e6e", -- brackets, commas
+  comment = "#5f5f5f", -- recedes furthest
+  linenr  = "#4b4b4b",
+  warn    = "#e5925a", -- the orange diagnostic in the reference
+}
+
+local function mono_syntax_highlights()
+  local m = mono
+  return {
+    Identifier                 = { fg = m.bright },
+    Function                   = { fg = m.bright },
+    Statement                  = { fg = m.keyword },
+    Keyword                    = { fg = m.keyword },
+    Conditional                = { fg = m.keyword },
+    Repeat                     = { fg = m.keyword },
+    Operator                   = { fg = m.keyword },
+    Type                       = { fg = m.text },
+    String                     = { fg = m.text },
+    Character                  = { fg = m.text },
+    Number                     = { fg = m.keyword },
+    Boolean                    = { fg = m.keyword },
+    Float                      = { fg = m.keyword },
+    Constant                   = { fg = m.text },
+    PreProc                    = { fg = m.keyword },
+    Special                    = { fg = m.text },
+    Delimiter                  = { fg = m.punct },
+    Todo                       = { fg = m.warn, bold = true },
+    Error                      = { fg = palette.red },
+    ["@variable"]              = { fg = m.bright },
+    ["@variable.builtin"]      = { fg = m.bright },
+    ["@variable.parameter"]    = { fg = m.text },
+    ["@variable.member"]       = { fg = m.field },
+    ["@property"]              = { fg = m.field },
+    ["@field"]                 = { fg = m.field },
+    ["@function"]              = { fg = m.bright },
+    ["@function.builtin"]      = { fg = m.bright },
+    ["@function.call"]         = { fg = m.bright },
+    ["@function.method"]       = { fg = m.field },
+    ["@function.method.call"]  = { fg = m.field },
+    ["@constructor"]           = { fg = m.text },
+    ["@keyword"]               = { fg = m.keyword },
+    ["@keyword.function"]      = { fg = m.keyword },
+    ["@keyword.return"]        = { fg = m.keyword },
+    ["@keyword.import"]        = { fg = m.keyword },
+    ["@keyword.conditional"]   = { fg = m.keyword },
+    ["@keyword.repeat"]        = { fg = m.keyword },
+    ["@keyword.operator"]      = { fg = m.keyword },
+    ["@operator"]              = { fg = m.keyword },
+    ["@type"]                  = { fg = m.text },
+    ["@type.builtin"]          = { fg = m.text },
+    ["@module"]                = { fg = m.text },
+    ["@string"]                = { fg = m.text },
+    ["@string.escape"]         = { fg = m.bright },
+    ["@number"]                = { fg = m.keyword },
+    ["@boolean"]               = { fg = m.keyword },
+    ["@constant"]              = { fg = m.text },
+    ["@constant.builtin"]      = { fg = m.keyword },
+    ["@punctuation.bracket"]   = { fg = m.punct },
+    ["@punctuation.delimiter"] = { fg = m.punct },
+    ["@punctuation.special"]   = { fg = m.punct },
+    ["@tag"]                   = { fg = m.bright },
+    ["@tag.attribute"]         = { fg = m.field },
+    ["@tag.delimiter"]         = { fg = m.punct },
+    -- Gutter and diagnostics, matching the reference
+    LineNr                     = { fg = m.linenr },
+    LineNrAbove                = { fg = m.linenr },
+    LineNrBelow                = { fg = m.linenr },
+    CursorLineNr               = { fg = m.bright, bold = true },
+    DiagnosticWarn             = { fg = m.warn },
+    DiagnosticVirtualTextWarn  = { fg = m.warn },
+    DiagnosticSignWarn         = { fg = m.warn },
+    DiagnosticUnderlineWarn    = { undercurl = true, sp = m.warn },
+    NonText                    = { fg = "#3a3a3a" }, -- listchars like the ↲ markers
+    Whitespace                 = { fg = "#3a3a3a" },
+  }
+end
 
 local function custom_syntax_highlights()
   local p = palette
@@ -306,16 +392,26 @@ local function apply_coding_highlights()
     RenderMarkdownBullet = { fg = p.purple },
   }
 
-  if use_custom_syntax then
+  if syntax_style == "purple" then
     for group, opts in pairs(custom_syntax_highlights()) do
       highlights[group] = opts
+    end
+  elseif syntax_style == "mono" then
+    for group, opts in pairs(mono_syntax_highlights()) do
+      highlights[group] = opts
+    end
+    -- LSP semantic tokens (@lsp.*) would repaint names in the colorscheme's
+    -- colours on top of treesitter; clear them so the monochrome look holds.
+    for _, group in ipairs(vim.fn.getcompletion("@lsp", "highlight")) do
+      if group ~= "@lsp.type.comment" then highlights[group] = {} end
     end
   end
 
   -- Comments stay gray regardless of colourscheme, so they sit quietly
   -- behind the code.
+  local comment = syntax_style == "mono" and mono.comment or p.comment
   for _, g in ipairs({ "Comment", "@comment", "@comment.documentation", "@lsp.type.comment", "SpecialComment" }) do
-    highlights[g] = { fg = p.comment, italic = true }
+    highlights[g] = { fg = comment, italic = true }
   end
 
   for group, opts in pairs(highlights) do
