@@ -37,6 +37,11 @@ shell-integration-features = no-cursor
 # of the text while you navigate nvim. A trackpad/mouse move brings it back.
 mouse-hide-while-typing = true
 
+# Left Option acts as Alt, so the shell's word keys work (Option+B/F jump a
+# word, Option+Backspace erases one). Right Option still types special
+# characters like é and ™.
+macos-option-as-alt = left
+
 selection-background = #3a2a5c
 selection-foreground = #ece4fb
 minimum-contrast = 3
