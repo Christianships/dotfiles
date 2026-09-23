@@ -5,8 +5,9 @@
 # Liquid glass, tuned for readable text over transparency.
 # Plain blur, not macos-glass-*: Apple's glass effect deliberately goes flat and
 # gray when its window loses focus, so unfocused windows looked different.
-# This blur looks the same focused or not. 20 = Ghostty's default radius.
-background-blur = 20
+# This blur looks the same focused or not. 20 = Ghostty's default radius;
+# 45 gives the heavier frosted look behind Neovim.
+background-blur = 45
 background-opacity = 0.86
 macos-titlebar-style = hidden
 background = #0b0713
