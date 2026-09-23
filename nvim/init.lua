@@ -346,6 +346,12 @@ local function apply_coding_highlights()
     SnacksInputBorder       = { fg = p.purple },
 
     -- Start screen
+    DashSpider1             = { fg = "#ecc4ff" },
+    DashSpider2             = { fg = "#daa6ff" },
+    DashSpider3             = { fg = "#c88afc" },
+    DashSpider4             = { fg = "#b670f4" },
+    DashSpider5             = { fg = "#a45cea" },
+    DashSpider6             = { fg = "#924cde" },
     SnacksDashboardHeader   = { fg = p.purple_lt },
     SnacksDashboardIcon     = { fg = p.purple },
     SnacksDashboardDesc     = { fg = p.fg },
@@ -1004,6 +1010,280 @@ end
 --  IDE PLUGINS
 -- ============================================================
 
+-- ── START SCREEN HELPERS ─────────────────────────────────────
+-- Spider #3 from fastfetch, one row per line so each gets its own
+-- step of the purple gradient (DashSpider1 top .. DashSpider6 bottom).
+local dashboard_spider = {
+  { 1, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⡶⢶⣄⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 1, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣠⣨⣿⠀⢀⣤⡿⣡⣶⠾⠶⣶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 1, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⡾⠟⠿⣶⣄⠀⠀⣸⡏⠉⠉⣿⣿⠟⠉⠀⠈⠀⠀⠀⠀⠈⠻⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 1, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⠏⠀⠀⢠⣿⠻⣷⣄⠻⠇⠀⣰⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 2, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⠃⠀⢰⠾⢿⣧⠀⠈⢻⣧⡀⠀⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⠿⠛⢿⡿⣶⣤⡀⠀⠀⠀⠀" },
+  { 2, "⠀⠀⠀⠀⠀⠀⠀⢀⣤⡾⠟⠛⢻⡿⣶⣤⣻⣇⠀⢀⣽⡿⠾⠛⠻⠷⢶⣦⣴⠄⠀⠀⠀⢀⣴⡿⠋⠁⠀⠀⣼⡇⠀⠙⢻⣦⡀⠀⠀" },
+  { 2, "⠀⠀⠀⠀⠀⠀⣴⡿⠋⠀⠀⠀⣾⡇⠀⠙⠻⣿⣶⣿⡁⠀⠀⠀⠀⠀⠀⠈⠡⡶⠆⠀⣠⣾⣯⣤⣶⣶⣶⣤⡛⠻⢷⣤⣾⠟⢿⣦⠀" },
+  { 3, "⠀⠀⠀⠀⢀⣾⣿⡀⢀⣴⠿⠛⠛⢷⣦⡄⠀⢸⡟⠉⠛⠛⠻⢶⣤⡀⠀⠀⠀⢰⣾⠛⠛⠉⠉⠀⣶⠀⠀⠙⢿⣄⠀⠙⢿⣦⣀⣿⡇" },
+  { 3, "⠀⠀⠀⢀⣾⠃⠙⣿⡿⠋⠀⠀⠀⠀⢈⣠⣴⣿⡇⣀⣀⡀⠀⠀⠙⢿⣆⠀⠀⠀⣿⠀⠀⢶⣦⡘⠿⢷⣦⣀⣼⣿⣆⠀⠀⠙⠛⠋⠀" },
+  { 3, "⠀⠀⢠⣿⡇⠀⣰⡿⠁⠀⢀⣴⡶⠟⢿⣏⣁⢸⣿⠟⠙⣿⣶⣦⡄⠀⠻⢷⣦⣾⣿⣤⣀⣠⣿⢿⣦⠀⠹⣿⡉⠀⠻⣧⡀⠀⠀⠀⠀" },
+  { 3, "⢀⣴⡿⠋⠻⣶⡿⠁⢀⣴⡟⠁⠀⠀⣨⣿⠟⢹⡏⠀⣼⡏⠀⣸⡇⣀⣠⣴⡿⠋⣄⠈⠻⣿⡁⠀⠹⣷⠀⠙⣷⣄⢀⣽⣿⣦⣄⡀⠀" },
+  { 4, "⣿⡉⢀⣠⣴⠟⠁⣠⡾⢿⣦⣀⡀⣸⣟⠁⢀⣼⣧⣤⣿⠀⢀⣿⢉⣟⣹⣿⠀⠀⣿⠀⠀⠘⣷⣴⡶⢿⡇⠀⠈⠻⣿⣏⠀⠈⠙⣿⡄" },
+  { 4, "⠙⠛⠛⠋⠁⠀⣴⡟⠁⠀⣽⡿⠋⣿⠛⠻⣿⠃⠈⠉⠻⢷⣾⠋⠈⢙⣿⣿⣴⣶⣿⠀⠀⠀⣿⡀⠀⠘⣷⠀⠀⠀⠈⠛⠿⠶⠶⠟⠀" },
+  { 4, "⠀⠀⠀⠀⢀⣾⢿⣦⣠⣾⠋⠀⢀⣿⠀⢀⣿⠀⠀⠀⠀⣼⣧⣄⣠⡿⠉⣿⠀⠀⣿⡀⠀⠀⢸⣇⠀⠀⢻⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 5, "⠀⠀⠀⢠⣾⠃⠀⣸⡿⠁⠀⠀⣼⡿⠷⣾⠇⠀⠀⠀⠀⣿⠉⠉⣿⡇⠀⣿⣄⣤⣬⡀⠀⠀⠀⢿⣶⡶⠿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 5, "⠀⠀⢠⣿⣧⣄⣴⡟⠁⠀⠀⢸⣟⠀⣴⡟⠀⠀⠀⠀⠀⣿⣄⣀⣿⡇⠀⣿⡏⠉⢹⣇⠀⠀⠀⠘⣿⡄⠀⠹⣷⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 5, "⠀⢠⣿⠁⠈⣽⠟⠀⠀⠀⠀⠈⠛⠟⠋⠀⠀⠀⠀⠀⠀⣿⡉⠉⢻⡇⠀⢸⣇⠀⠘⣿⡀⠀⠀⠀⠈⢿⣦⣴⡿⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 5, "⠀⠘⠿⣦⣾⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠷⡶⠿⠃⠀⠘⣿⣤⡶⢿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 6, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⡇⠀⠘⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 6, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⡀⠀⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+  { 6, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⢷⣶⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
+}
+
+local function spider_header()
+  local section = { padding = 1 }
+  for _, row in ipairs(dashboard_spider) do
+    table.insert(section, { text = { { row[2], hl = "DashSpider" .. row[1] } }, align = "center" })
+  end
+  return section
+end
+
+-- Claude Code keeps every conversation in ~/.claude/projects/<dir>/<id>.jsonl.
+-- Files can be many MB, so only the start (title, folder, first prompts) and
+-- the end (a later /rename) of each file are read.
+local function read_head_tail(path, size)
+  local fh = io.open(path, "r")
+  if not fh then return "" end
+  local head = fh:read(256 * 1024) or ""
+  local tail = ""
+  if size > 320 * 1024 then
+    fh:seek("set", size - 64 * 1024)
+    tail = fh:read("*a") or ""
+  end
+  fh:close()
+  return head .. "\n" .. tail
+end
+
+local function first_prompts(data, max)
+  local prompts = {}
+  for line in data:gmatch("[^\n]+") do
+    if #prompts >= max then break end
+    if line:find('"type":"user"', 1, true) then
+      local ok, d = pcall(vim.json.decode, line)
+      local c = ok and type(d) == "table" and d.message and d.message.content
+      local text = type(c) == "string" and c
+        or (type(c) == "table" and c[1] and c[1].type == "text" and c[1].text)
+      if text and not text:match("^%s*<") and not text:match("^%[Image")
+        and not text:match("^%[Request interrupted") then
+        table.insert(prompts, vim.trim(text))
+      end
+    end
+  end
+  return prompts
+end
+
+local function claude_sessions(limit)
+  local files = vim.fn.glob(vim.fn.expand("~/.claude/projects") .. "/*/*.jsonl", false, true)
+  local list = {}
+  for _, f in ipairs(files) do
+    local st = vim.uv.fs_stat(f)
+    if st and st.size > 0 then table.insert(list, { path = f, mtime = st.mtime.sec, size = st.size }) end
+  end
+  table.sort(list, function(a, b) return a.mtime > b.mtime end)
+
+  local out = {}
+  for _, entry in ipairs(list) do
+    if #out >= limit then break end
+    local data = read_head_tail(entry.path, entry.size)
+    -- Title priority: your /rename, then Claude's auto title, then the first prompt.
+    local title
+    for t in data:gmatch('"customTitle":"(.-)","') do title = t end
+    if not title then for t in data:gmatch('"aiTitle":"(.-)","') do title = t end end
+    local prompts = first_prompts(data, 5)
+    title = title or prompts[1]
+    local cwd = data:match('"cwd":"(.-)"')
+    if title and cwd then
+      title = title:gsub("\\n", " "):gsub('\\"', '"'):gsub("%s+", " ")
+      table.insert(out, {
+        id = vim.fn.fnamemodify(entry.path, ":t:r"),
+        cwd = cwd,
+        title = vim.trim(title),
+        prompts = prompts,
+        mtime = entry.mtime,
+      })
+    end
+  end
+  return out
+end
+
+local function time_ago(sec)
+  local d = os.time() - sec
+  if d < 3600 then return math.max(1, math.floor(d / 60)) .. "m ago" end
+  if d < 86400 then return math.floor(d / 3600) .. "h ago" end
+  return math.floor(d / 86400) .. "d ago"
+end
+
+-- Claude runs in a big floating terminal.
+local function open_claude(args, cwd)
+  local cmd = vim.list_extend({ "claude" }, args or {})
+  Snacks.terminal.open(cmd, {
+    cwd = cwd,
+    win = { position = "float", width = 0.92, height = 0.9, border = "rounded", title = " Claude ", title_pos = "center" },
+  })
+end
+
+-- Picker: recent Claude sessions from every folder. Enter resumes one.
+local function pick_claude_sessions()
+  local items = {}
+  for i, s in ipairs(claude_sessions(40)) do
+    local where = vim.fn.fnamemodify(s.cwd, ":~")
+    local lines = {
+      "# " .. s.title, "",
+      "- **Folder:** `" .. where .. "`",
+      "- **Last active:** " .. os.date("%a %b %d, %I:%M %p", s.mtime) .. " (" .. time_ago(s.mtime) .. ")",
+      "- **Session:** `" .. s.id .. "`", "",
+      "## First prompts", "",
+    }
+    for _, pr in ipairs(s.prompts) do
+      table.insert(lines, "> " .. vim.fn.strcharpart(pr:gsub("\n", " "), 0, 300))
+      table.insert(lines, "")
+    end
+    table.insert(items, {
+      idx = i,
+      text = s.title .. " " .. where,
+      session = s,
+      where = vim.fn.fnamemodify(s.cwd, ":t"),
+      ago = time_ago(s.mtime),
+      preview = { text = table.concat(lines, "\n"), ft = "markdown" },
+    })
+  end
+  Snacks.picker.pick({
+    title = "Claude Sessions",
+    items = items,
+    preview = "preview",
+    format = function(item)
+      return {
+        { "\u{f06a9}  ", "SnacksDashboardIcon" },
+        { vim.fn.strcharpart(item.session.title, 0, 60), "SnacksPickerFile" },
+        { "  " .. item.where, "SnacksPickerDir" },
+        { "  " .. item.ago, "SnacksPickerComment" },
+      }
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if item then open_claude({ "--resume", item.session.id }, item.session.cwd) end
+    end,
+  })
+end
+
+-- Picker: folders in ~/Projects. Enter moves nvim into the project and
+-- lists its files.
+local function pick_projects()
+  local root = vim.fn.expand("~/Projects")
+  local items = {}
+  for name, kind in vim.fs.dir(root) do
+    if kind == "directory" and not name:match("^%.") then
+      table.insert(items, { text = name, file = root .. "/" .. name, dir = true })
+    end
+  end
+  table.sort(items, function(a, b) return a.text:lower() < b.text:lower() end)
+  Snacks.picker.pick({
+    title = "Projects",
+    items = items,
+    format = function(item)
+      return { { "\u{f07b}  ", "Directory" }, { item.text, "SnacksPickerFile" } }
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if not item then return end
+      vim.cmd.cd(item.file)
+      Snacks.picker.files({ cwd = item.file })
+    end,
+  })
+end
+
+-- GitHub through the `gh` CLI. The top entries work from any folder; the
+-- "this repo" ones only appear when nvim is inside a git repository.
+local function gh_json(args)
+  local res = vim.system(vim.list_extend({ "gh" }, args), { text = true }):wait()
+  if res.code ~= 0 then
+    vim.notify("gh " .. table.concat(args, " ") .. " failed:\n" .. (res.stderr or ""), vim.log.levels.ERROR)
+    return {}
+  end
+  local ok, data = pcall(vim.json.decode, res.stdout)
+  return ok and data or {}
+end
+
+local function pick_links(title, icon, rows)
+  if #rows == 0 then
+    vim.notify(title .. ": nothing found", vim.log.levels.INFO)
+    return
+  end
+  Snacks.picker.pick({
+    title = title,
+    items = rows,
+    layout = { preset = "select" },
+    format = function(item)
+      return { { icon .. "  ", "SnacksDashboardIcon" }, { item.text, "SnacksPickerFile" }, { "  " .. item.label, "SnacksPickerDir" } }
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if item then vim.ui.open(item.url) end
+    end,
+  })
+end
+
+local function gh_search(kind, filter, title, icon)
+  local rows = {}
+  for _, it in ipairs(gh_json({ "search", kind, filter, "--state=open", "--limit=50", "--json=title,number,repository,url" })) do
+    table.insert(rows, { text = it.title, label = it.repository.nameWithOwner .. " #" .. it.number, url = it.url })
+  end
+  pick_links(title, icon, rows)
+end
+
+local function pick_github()
+  local items = {
+    { text = "My open pull requests", icon = "\u{f407}", run = function() gh_search("prs", "--author=@me", "My open pull requests", "\u{f407}") end },
+    { text = "Pull requests to review", icon = "\u{f0cc}", run = function() gh_search("prs", "--review-requested=@me", "Review requested", "\u{f0cc}") end },
+    { text = "Issues assigned to me", icon = "\u{f41b}", run = function() gh_search("issues", "--assignee=@me", "Assigned issues", "\u{f41b}") end },
+    { text = "My repositories", icon = "\u{f401}", run = function()
+      local rows = {}
+      for _, r in ipairs(gh_json({ "repo", "list", "--limit=100", "--json=nameWithOwner,description,url" })) do
+        table.insert(rows, { text = r.nameWithOwner, label = r.description or "", url = r.url })
+      end
+      pick_links("My repositories", "\u{f401}", rows)
+    end },
+    { text = "Notifications (browser)", icon = "\u{f0f3}", run = function() vim.ui.open("https://github.com/notifications") end },
+  }
+  if Snacks.git.get_root() then
+    vim.list_extend(items, {
+      { text = "This repo: pull requests", icon = "\u{f407}", run = function() Snacks.picker.gh_pr() end },
+      { text = "This repo: issues", icon = "\u{f41b}", run = function() Snacks.picker.gh_issue() end },
+      { text = "This repo: open in browser", icon = "\u{f0ac}", run = function() Snacks.gitbrowse() end },
+    })
+  end
+  Snacks.picker.pick({
+    title = "GitHub",
+    items = items,
+    layout = { preset = "select" },
+    format = function(item) return { { item.icon .. "  ", "SnacksDashboardIcon" }, { item.text, "SnacksPickerFile" } } end,
+    confirm = function(picker, item)
+      picker:close()
+      if item then vim.schedule(item.run) end
+    end,
+  })
+end
+
+-- The tab bar is just an empty strip on the start screen, so hide it there.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "snacks_dashboard",
+  callback = function(ev)
+    vim.o.showtabline = 0
+    vim.api.nvim_create_autocmd("BufLeave", {
+      buffer = ev.buf,
+      once = true,
+      callback = function() vim.o.showtabline = 2 end,
+    })
+  end,
+})
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
@@ -1298,41 +1578,32 @@ require("lazy").setup({
       words = {},        -- highlight references under the cursor
       scroll = {},       -- smooth scrolling
       dashboard = {
-        width = 64,
+        width = 50,
         preset = {
-          header = [[
-⠀⠀⠀⠀⢠⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⡀⠀⠀⢶⣦⠺⣷⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣀⡀⠀⠀⠀⠀⠀
-⣀⣀⣀⣀⣸⣿⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡀⠀⠀⠈⢻⡧⠘⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡿⠀⠀⠀⠀⠀⠀
-⠛⠛⠛⠛⠛⠛⠛⢛⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠿⠿⠿⠿⠿⠿⢿⣿⣿⠿⠿⠿⠿⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠿⠿⠿⠿⠿⠿⠿⠿⠿⣿⡷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⡶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⠃⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⣠⣴⡿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⢿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣾⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⡏⠀⠀⢠⣴⡄⠀⠀
-⢀⣀⣤⣶⣿⣿⢿⣶⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣾⡟⠁⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠛⠀⠀⠀⠀⠀⠀⠀⢀⣾⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣶⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⡿⠀⠀⠀⠀⠹⣿⣆⠀
-⠿⠛⠋⠁⢸⣿⠀⠈⠙⠻⢿⣷⡤⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⠟⠁⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⡟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⠿⠛⠋⠁⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⠃⠀⠀⠀⠀⠀⢘⣿⣆
-⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠈⠁⠀⠀⠀⠀⠀⠀⠐⢿⠟⠋⠁⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣴⣿⠟⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⣴⣿⣷⣶⣶⣶⡿⠿⠿⠿⠛⣿
-⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠿⠛⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠘]],
           -- stylua: ignore
           keys = {
-            { icon = "\u{f07c} ", key = ".", desc = "> File Browser", action = function() Snacks.explorer() end },
-            { icon = "\u{f0214} ", key = "f", desc = "> Find File", action = ":lua Snacks.dashboard.pick('files')" },
-            { icon = "\u{f0c5} ", key = "r", desc = "> Recent Files", action = ":lua Snacks.dashboard.pick('oldfiles')" },
-            { icon = "\u{f002} ", key = "/", desc = "> Find Text", action = ":lua Snacks.dashboard.pick('live_grep')" },
-            { icon = "\u{f120} ", key = "t", desc = "> Terminal", action = function() Snacks.terminal.toggle() end },
-            { icon = "\u{f09b} ", key = "g", desc = "> Git", action = function() Snacks.lazygit() end },
+            { icon = "\u{f06a9} ", key = "c", desc = "> Claude Sessions", action = function() pick_claude_sessions() end },
+            { icon = "\u{f0c5} ", key = "r", desc = "> Recent Files", action = function() Snacks.picker.recent() end },
+            { icon = "\u{f07b} ", key = "p", desc = "> Projects", action = function() pick_projects() end },
+            { icon = "\u{f09b} ", key = "g", desc = "> GitHub", action = function() pick_github() end },
+            { icon = "\u{f11c} ", key = "?", desc = "> Keymaps", action = function() Snacks.picker.keymaps() end },
             { icon = "\u{f021} ", key = "s", desc = "> Restore Session", action = function() require("persistence").load() end },
-            { icon = "\u{f04b2} ", key = "l", desc = "> Lazy (Package Manager)", action = ":Lazy" },
-            { icon = "\u{f0ad} ", key = "m", desc = "> Mason (Language Servers)", action = ":Mason" },
-            { icon = "\u{f128} ", key = "?", desc = "> Help", action = function() show_nvim_controls() end },
-            { icon = "\u{f057} ", key = "q", desc = "> Quit NVIM", action = ":qa" },
+            { icon = "\u{f057} ", key = "q", desc = "> Quit", action = ":qa" },
           },
         },
         sections = {
-          { section = "header", padding = 2 },
-          { section = "keys", gap = 1, padding = 2 },
+          spider_header,
+          { section = "keys", gap = 1, padding = 1 },
           { section = "startup" },
         },
       },
     },
     keys = {
       { "<leader>.", function() Snacks.explorer() end, desc = "File browser" },
+      { "<leader>ac", function() pick_claude_sessions() end, desc = "Claude sessions" },
+      { "<leader>P", function() pick_projects() end, desc = "Projects" },
+      { "<leader>G", function() pick_github() end, desc = "GitHub" },
+      { "<leader>K", function() Snacks.picker.keymaps() end, desc = "Search keymaps" },
       { "<leader>r", function() Snacks.picker.recent() end, desc = "Recent files" },
       { "<leader>u", function() Snacks.picker.undo() end, desc = "Undo tree" },
       { "]]", function() Snacks.words.jump(vim.v.count1) end, desc = "Next reference" },
@@ -1510,6 +1781,7 @@ require("lazy").setup({
       end
       clear_bg()
       vim.api.nvim_create_autocmd("ColorScheme", { callback = function() vim.schedule(clear_bg) end })
+      if vim.bo.filetype == "snacks_dashboard" then vim.o.showtabline = 0 end
     end,
     keys = {
       { "<S-h>", "<cmd>BufferLineCyclePrev<cr>", desc = "Previous tab" },
