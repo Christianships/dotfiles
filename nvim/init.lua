@@ -64,11 +64,12 @@ local palette = {
 
 
 -- Who paints the code (token) colours:
+--   "neon"     full colour, tuned to the purple UI (see neon_syntax_highlights)
 --   "mono"     monochrome: near-white code, gray keywords, blue-gray fields,
 --              dim comments, orange warnings (see mono_syntax_highlights)
 --   "purple"   the hand-painted palette from before Kanagawa
 --   "kanagawa" leave tokens to the Kanagawa colorscheme
-local syntax_style = "mono"
+local syntax_style = "neon"
 
 -- Monochrome text palette; only syntax_style = "mono" uses it.
 local mono = {
@@ -150,6 +151,105 @@ local function mono_syntax_highlights()
     DiagnosticUnderlineWarn    = { undercurl = true, sp = m.warn },
     NonText                    = { fg = "#3a3a3a" }, -- listchars like the ↲ markers
     Whitespace                 = { fg = "#3a3a3a" },
+  }
+end
+
+-- Full-colour palette for syntax_style = "neon". Every hue is pastel enough to
+-- sit on the dark glass without glowing, and keywords carry the purple accent
+-- so code reads as part of the same theme as the UI.
+local neon = {
+  text     = "#e4dcf5", -- variables: soft lilac white
+  keyword  = "#c792ea", -- local / if / return: the theme purple
+  func     = "#82aaff", -- function names and calls: blue
+  method   = "#89ddff", -- methods: light cyan
+  field    = "#94e2d5", -- .fields / properties: teal
+  param    = "#f5c2e7", -- parameters: pink
+  string   = "#a6e3a1", -- strings: green
+  number   = "#fab387", -- numbers, booleans, constants: peach
+  type     = "#f9e2af", -- types and classes: warm yellow
+  module   = "#b4befe", -- modules / namespaces: lavender
+  builtin  = "#f38ba8", -- self, vim, nil-ish builtins: rose
+  operator = "#89dceb", -- = + .. == : sky
+  punct    = "#9399b2", -- brackets, commas: muted slate
+  linenr   = "#4e4466",
+}
+
+local function neon_syntax_highlights()
+  local c = neon
+  return {
+    Identifier                 = { fg = c.text },
+    Function                   = { fg = c.func },
+    Statement                  = { fg = c.keyword },
+    Keyword                    = { fg = c.keyword },
+    Conditional                = { fg = c.keyword },
+    Repeat                     = { fg = c.keyword },
+    Operator                   = { fg = c.operator },
+    Type                       = { fg = c.type },
+    String                     = { fg = c.string },
+    Character                  = { fg = c.string },
+    Number                     = { fg = c.number },
+    Boolean                    = { fg = c.number },
+    Float                      = { fg = c.number },
+    Constant                   = { fg = c.number },
+    PreProc                    = { fg = c.keyword },
+    Include                    = { fg = c.keyword },
+    Special                    = { fg = c.param },
+    Delimiter                  = { fg = c.punct },
+    Todo                       = { fg = palette.yellow, bold = true },
+    Error                      = { fg = palette.red },
+    ["@variable"]              = { fg = c.text },
+    ["@variable.builtin"]      = { fg = c.builtin, italic = true },
+    ["@variable.parameter"]    = { fg = c.param, italic = true },
+    ["@variable.member"]       = { fg = c.field },
+    ["@property"]              = { fg = c.field },
+    ["@field"]                 = { fg = c.field },
+    ["@function"]              = { fg = c.func },
+    ["@function.builtin"]      = { fg = c.func, italic = true },
+    ["@function.call"]         = { fg = c.func },
+    ["@function.method"]       = { fg = c.method },
+    ["@function.method.call"]  = { fg = c.method },
+    ["@function.macro"]        = { fg = c.builtin },
+    ["@constructor"]           = { fg = c.type },
+    ["@keyword"]               = { fg = c.keyword },
+    ["@keyword.function"]      = { fg = c.keyword, italic = true },
+    ["@keyword.return"]        = { fg = c.keyword, italic = true },
+    ["@keyword.import"]        = { fg = c.keyword },
+    ["@keyword.conditional"]   = { fg = c.keyword },
+    ["@keyword.repeat"]        = { fg = c.keyword },
+    ["@keyword.exception"]     = { fg = c.builtin },
+    ["@keyword.operator"]      = { fg = c.keyword },
+    ["@operator"]              = { fg = c.operator },
+    ["@type"]                  = { fg = c.type },
+    ["@type.builtin"]          = { fg = c.type, italic = true },
+    ["@type.definition"]       = { fg = c.type },
+    ["@module"]                = { fg = c.module },
+    ["@string"]                = { fg = c.string },
+    ["@string.escape"]         = { fg = c.param },
+    ["@string.regexp"]         = { fg = c.param },
+    ["@string.special.url"]    = { fg = c.method, underline = true },
+    ["@character"]             = { fg = c.string },
+    ["@number"]                = { fg = c.number },
+    ["@number.float"]          = { fg = c.number },
+    ["@boolean"]               = { fg = c.number },
+    ["@constant"]              = { fg = c.number },
+    ["@constant.builtin"]      = { fg = c.number },
+    ["@constant.macro"]        = { fg = c.number },
+    ["@attribute"]             = { fg = c.type },
+    ["@label"]                 = { fg = c.method },
+    ["@punctuation.bracket"]   = { fg = c.punct },
+    ["@punctuation.delimiter"] = { fg = c.punct },
+    ["@punctuation.special"]   = { fg = c.operator },
+    ["@tag"]                   = { fg = c.keyword },
+    ["@tag.builtin"]           = { fg = c.keyword },
+    ["@tag.attribute"]         = { fg = c.type, italic = true },
+    ["@tag.delimiter"]         = { fg = c.punct },
+    ["@markup.heading"]        = { fg = c.keyword, bold = true },
+    ["@markup.link.url"]       = { fg = c.method, underline = true },
+    ["@markup.raw"]            = { fg = c.string },
+    LineNr                     = { fg = c.linenr },
+    LineNrAbove                = { fg = c.linenr },
+    LineNrBelow                = { fg = c.linenr },
+    CursorLineNr               = { fg = palette.purple_lt, bold = true },
   }
 end
 
@@ -402,12 +502,13 @@ local function apply_coding_highlights()
     for group, opts in pairs(custom_syntax_highlights()) do
       highlights[group] = opts
     end
-  elseif syntax_style == "mono" then
-    for group, opts in pairs(mono_syntax_highlights()) do
+  elseif syntax_style == "mono" or syntax_style == "neon" then
+    local styled = syntax_style == "mono" and mono_syntax_highlights() or neon_syntax_highlights()
+    for group, opts in pairs(styled) do
       highlights[group] = opts
     end
     -- LSP semantic tokens (@lsp.*) would repaint names in the colorscheme's
-    -- colours on top of treesitter; clear them so the monochrome look holds.
+    -- colours on top of treesitter; clear them so this palette holds.
     for _, group in ipairs(vim.fn.getcompletion("@lsp", "highlight")) do
       if group ~= "@lsp.type.comment" then highlights[group] = {} end
     end
@@ -1173,29 +1274,55 @@ local function pick_claude_sessions()
   })
 end
 
--- Picker: folders in ~/Projects. Enter moves nvim into the project and
--- lists its files.
-local function pick_projects()
-  local root = vim.fn.expand("~/Projects")
+-- Picker over one folder's children. Enter on a folder moves nvim into it
+-- and lists its files; Enter on a file opens it.
+local function pick_folder(title, root, extra)
   local items = {}
   for name, kind in vim.fs.dir(root) do
-    if kind == "directory" and not name:match("^%.") then
-      table.insert(items, { text = name, file = root .. "/" .. name, dir = true })
+    local path = root .. "/" .. name
+    if not name:match("^%.") and (kind == "directory" or (extra and extra.files)) then
+      table.insert(items, { text = name, file = path, dir = kind == "directory" })
     end
   end
-  table.sort(items, function(a, b) return a.text:lower() < b.text:lower() end)
+  for _, path in ipairs(extra and extra.also or {}) do
+    if vim.uv.fs_stat(path) then
+      table.insert(items, { text = vim.fn.fnamemodify(path, ":~"), file = path, dir = vim.fn.isdirectory(path) == 1 })
+    end
+  end
+  table.sort(items, function(a, b)
+    if a.dir ~= b.dir then return a.dir end -- folders first
+    return a.text:lower() < b.text:lower()
+  end)
   Snacks.picker.pick({
-    title = "Projects",
+    title = title,
     items = items,
     format = function(item)
-      return { { "\u{f07b}  ", "Directory" }, { item.text, "SnacksPickerFile" } }
+      local icon = item.dir and { "\u{f07b}  ", "Directory" } or { "\u{f15b}  ", "SnacksDashboardIcon" }
+      return { icon, { item.text, "SnacksPickerFile" } }
     end,
     confirm = function(picker, item)
       picker:close()
       if not item then return end
-      vim.cmd.cd(item.file)
-      Snacks.picker.files({ cwd = item.file })
+      if item.dir then
+        vim.cmd.cd(item.file)
+        Snacks.picker.files({ cwd = item.file, hidden = true })
+      else
+        vim.cmd.cd(vim.fn.fnamemodify(item.file, ":h"))
+        vim.cmd.edit(vim.fn.fnameescape(item.file))
+      end
     end,
+  })
+end
+
+local function pick_projects()
+  pick_folder("Projects", vim.fn.expand("~/Projects"))
+end
+
+-- Every app config in ~/.config, plus the shell dotfiles that live in ~.
+local function pick_configs()
+  pick_folder("Configs", vim.fn.expand("~/.config"), {
+    files = true,
+    also = { vim.fn.expand("~/.zshrc"), vim.fn.expand("~/.zprofile"), vim.fn.expand("~/.gitconfig") },
   })
 end
 
@@ -1585,6 +1712,7 @@ require("lazy").setup({
             { icon = "\u{f06a9} ", key = "c", desc = "> Claude Sessions", action = function() pick_claude_sessions() end },
             { icon = "\u{f0c5} ", key = "r", desc = "> Recent Files", action = function() Snacks.picker.recent() end },
             { icon = "\u{f07b} ", key = "p", desc = "> Projects", action = function() pick_projects() end },
+            { icon = "\u{f013} ", key = ".", desc = "> Configs", action = function() pick_configs() end },
             { icon = "\u{f09b} ", key = "g", desc = "> GitHub", action = function() pick_github() end },
             { icon = "\u{f11c} ", key = "?", desc = "> Keymaps", action = function() Snacks.picker.keymaps() end },
             { icon = "\u{f021} ", key = "s", desc = "> Restore Session", action = function() require("persistence").load() end },
@@ -1602,6 +1730,7 @@ require("lazy").setup({
       { "<leader>.", function() Snacks.explorer() end, desc = "File browser" },
       { "<leader>ac", function() pick_claude_sessions() end, desc = "Claude sessions" },
       { "<leader>P", function() pick_projects() end, desc = "Projects" },
+      { "<leader>C", function() pick_configs() end, desc = "Configs (~/.config)" },
       { "<leader>G", function() pick_github() end, desc = "GitHub" },
       { "<leader>K", function() Snacks.picker.keymaps() end, desc = "Search keymaps" },
       { "<leader>r", function() Snacks.picker.recent() end, desc = "Recent files" },
