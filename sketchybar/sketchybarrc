@@ -5,7 +5,7 @@
 #  Layout
 #    left    workspaces (AeroSpace) · mode · calendar (current event)
 #    right   OBS (scene · record · stream · cam)
-#            · cpu · mem · battery · clock
+#            · claude (5h · wk) · cpu · mem · battery · clock
 #
 #  Geometry (MacBook Air 13" M4, measured via NSScreen):
 #    frame 1470x956 · notch = safeAreaInsets.top = 32pt
@@ -53,6 +53,11 @@ export APP_FONT="sketchybar-app-font:Regular:16.0"
 # paddings, and each side supplies half. Items that share a pill override this
 # back down; see the comments at those overrides.
 export GAP=5
+# Every gap between two pills is 2*GAP. That falls out on its own between two
+# standalone items, but a bracket's background spans its edge items' padding,
+# so beside a bracket the neighbour (or a spacer item) must supply the whole
+# 2*GAP itself.
+export PILL_GAP=$((GAP * 2))
 
 # ── Bar ───────────────────────────────────────────────────────────
 sketchybar --bar \
@@ -102,6 +107,7 @@ source "$ITEM_DIR/calendar.sh"
 source "$ITEM_DIR/clock.sh"
 source "$ITEM_DIR/status.sh"
 source "$ITEM_DIR/system.sh"
+source "$ITEM_DIR/claude.sh"
 source "$ITEM_DIR/obs.sh"
 
 # ── Go ────────────────────────────────────────────────────────────

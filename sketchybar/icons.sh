@@ -15,11 +15,15 @@ export ICON_KEYBOARD=""  # U+F11C
 export ICON_RESIZE="󰩩"  # U+F0A69
 export ICON_COG="󰒓"  # U+F0493
 export ICON_CPU=""  # U+F2DB
+export ICON_GPU="󰢮"  # U+F08AE (md-expansion-card-variant)
+export ICON_TEMP="󰔏"  # U+F050F (md-thermometer)
 export ICON_MEM=""  # U+F1C0 (fa-database)
 export ICON_WIFI=""  # U+F1EB
 export ICON_WIFI_OFF="󰖪"  # U+F05AA
 export ICON_CLOCK=""  # U+F017
 export ICON_CAL=""  # U+F133
+export ICON_CLAUDE_5H="󰔟"  # U+F051F (md-timer_sand)
+export ICON_CLAUDE_WK="󰨳"  # U+F0A33 (md-calendar_week)
 
 # Circular progress, empty to full in eighths: how far through the current
 # calendar event you are. nf-md-circle_outline plus nf-md-circle_slice_1..8
