@@ -95,8 +95,8 @@ $time"""
 symbol = ' '
 
 [character]
-format = "$symbol "
-success_symbol = "[](bold italic purple fg:#af00ff bold)"
+format = "$symbol  "
+success_symbol = "[:::](bold fg:#af00ff)"
 error_symbol = "[✘](italic bold bright-red)"
 vimcmd_symbol = "[■](italic dimmed green)"
 # not supported in zsh
