@@ -1,0 +1,2 @@
+// read by tempbar.sh — just the CPU/SoC temperature as JSON
+{ "logo": null, "modules": [{ "type": "cpu", "temp": true }] }
