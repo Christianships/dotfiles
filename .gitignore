@@ -1,0 +1,14 @@
+# Secrets and tokens — never committed
+gh/
+neonctl/
+configstore/
+obs/overlays/config.js
+# App data, not configuration
+raycast/
+# Noise
+.DS_Store
+*.log
+**/node_modules/
+# Backups are replayed as history, not kept as files
+*.bak*
+*.bak-*
