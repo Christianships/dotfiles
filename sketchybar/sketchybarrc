@@ -102,8 +102,8 @@ source "$ITEM_DIR/calendar.sh"
 
 # Right region stacks right-to-left: the first item added sits furthest
 # right, so these are sourced in reverse visual order. OBS is sourced
-# last and therefore renders leftmost of the right cluster, where it
-# stays put instead of drifting as workspace pills grow and shrink.
+# last: its tallies render leftmost of the right cluster, and its scene
+# pill joins the end of the left region, after spaces and calendar.
 source "$ITEM_DIR/clock.sh"
 source "$ITEM_DIR/status.sh"
 source "$ITEM_DIR/system.sh"

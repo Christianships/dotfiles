@@ -5,8 +5,10 @@
 # their content and visibility, pushing updates over a live obs-websocket
 # connection. The whole group disappears when OBS is not running.
 #
-# Added in reverse visual order, because the right region stacks
-# right-to-left. Rendered order ends up: scene · record · stream · cam.
+# The scene pill sits on the LEFT, after the workspaces and calendar (this
+# file is sourced after them, so it lands at the end of the left region).
+# The tallies stay on the right, added in reverse visual order because the
+# right region stacks right-to-left: follow · record · stream · cam.
 
 OBS_REQUEST="$PLUGIN_DIR/obs-request.mjs"
 NODE_BIN="$(command -v node || echo /opt/homebrew/bin/node)"
@@ -75,8 +77,8 @@ sketchybar --add item obs.rec right \
         padding_right="$GAP" \
         click_script="$NODE_BIN '$OBS_REQUEST' record-toggle"
 
-# Current scene. Click opens a popup listing every scene.
-sketchybar --add item obs.scene right \
+# Current scene, on the left side. Click opens a popup listing every scene.
+sketchybar --add item obs.scene left \
     --subscribe obs.scene mouse.exited.global \
     --set obs.scene \
         drawing=off \
