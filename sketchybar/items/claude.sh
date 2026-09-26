@@ -35,6 +35,7 @@ sketchybar --add item claude_wk right \
         label.color="$FG" \
         label.padding_right=9 \
         padding_left=1 \
+        click_script="open -g 'raycast://extensions/nyatinte/ccusage/ccusage'" \
         script="$PLUGIN_DIR/claude_usage.sh"
 
 sketchybar --add item claude_5h right \
@@ -47,7 +48,8 @@ sketchybar --add item claude_5h right \
         label.font="$FONT:SemiBold:12.0" \
         label.color="$FG" \
         label.padding_right=4 \
-        padding_right=1
+        padding_right=1 \
+        click_script="open -g 'raycast://extensions/nyatinte/ccusage/ccusage'"
 
 sketchybar --add item claude_gap_left right \
     --set claude_gap_left \
