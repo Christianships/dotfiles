@@ -55,6 +55,8 @@ export LIVE_SOFT=0xb3ff453a
 export LIVE_DIM=0x59ff453a
 # Low battery, same hue as the record dot.
 export CRITICAL=0xffff453a
+# Today's Claude spend in the usage pill -- same green as FOLLOW below.
+export MONEY=0xff32d74b
 
 # Mouse-follow indicator. The second deliberate splash of colour.
 export FOLLOW=0xff32d74b

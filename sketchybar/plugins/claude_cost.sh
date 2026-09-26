@@ -14,10 +14,10 @@ cost=$(bunx ccusage@20 daily --json --since "$today" --until "$today" 2>/dev/nul
     | jq -r '.totals.totalCost // empty' 2>/dev/null)
 
 if [ -z "$cost" ]; then
-    sketchybar --set claude_cost label="--" label.color="$FG_DIM"
+    sketchybar --set claude_cost label="\$--" label.color="$FG_DIM"
     exit 0
 fi
 
 # Cents while small, whole dollars once it reaches three digits.
-label=$(awk -v c="$cost" 'BEGIN { printf (c >= 100 ? "%.0f" : "%.2f"), c }')
-sketchybar --set claude_cost label="$label" label.color="$FG"
+label=$(awk -v c="$cost" 'BEGIN { printf (c >= 100 ? "$%.0f" : "$%.2f"), c }')
+sketchybar --set claude_cost label="$label" label.color="$MONEY"

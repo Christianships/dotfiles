@@ -6,8 +6,8 @@
 # Only claude_wk runs the usage script; it updates both items in one request.
 # claude_cost has its own script: it shells out to ccusage (~1s), which
 # should not hold up the usage numbers.
-# update_freq is 120s -- the numbers move slowly and the endpoint is shared
-# with Claude Code itself, so there is no point hammering it.
+# update_freq is 120s, but that only re-reads a local cache: see
+# plugins/claude_usage.sh for when it actually touches the network.
 
 # The two items share one pill, so they override $GAP back down -- same as
 # cpu/mem in system.sh.
@@ -26,28 +26,30 @@ sketchybar --add item claude_gap right \
 
 RAYCAST_USAGE="open -g 'raycast://extensions/nyatinte/ccusage/ccusage'"
 
+# No icon: the "$" is part of the green label so it reads as one "$107".
 # Fixed, right-aligned width so the pill doesn't resize as the cost grows.
-# 36pt fits "99.99"; from $100 it drops the cents ("999"), so it still fits.
+# 44pt fits "$99.99"; from $100 it drops the cents ("$999"), so it still fits.
 sketchybar --add item claude_cost right \
     --subscribe claude_cost system_woke \
     --set claude_cost \
         update_freq=120 \
-        icon="$ICON_CLAUDE_COST" \
-        icon.color="$W50" \
-        icon.padding_left=7 \
-        icon.padding_right=3 \
-        label="--" \
+        icon.drawing=off \
+        label="\$--" \
         label.font="$FONT:SemiBold:12.0" \
-        label.color="$FG" \
-        label.width=36 \
+        label.color="$MONEY" \
+        label.width=44 \
         label.align=right \
+        label.padding_left=7 \
         label.padding_right=9 \
         padding_left=1 \
         click_script="$RAYCAST_USAGE" \
         script="$PLUGIN_DIR/claude_cost.sh"
 
+# Fired by plugins/claude_statusline.sh when Claude Code reports new numbers.
+sketchybar --add event claude_usage_update
+
 sketchybar --add item claude_wk right \
-    --subscribe claude_wk system_woke \
+    --subscribe claude_wk system_woke claude_usage_update \
     --set claude_wk \
         update_freq=120 \
         icon="$ICON_CLAUDE_WK" \

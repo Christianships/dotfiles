@@ -24,7 +24,6 @@ export ICON_CLOCK=""  # U+F017
 export ICON_CAL=""  # U+F133
 export ICON_CLAUDE_5H="󰔟"  # U+F051F (md-timer_sand)
 export ICON_CLAUDE_WK="󰨳"  # U+F0A33 (md-calendar_week)
-export ICON_CLAUDE_COST="󰇁"  # U+F01C1 (md-currency_usd)
 
 # Circular progress, empty to full in eighths: how far through the current
 # calendar event you are. nf-md-circle_outline plus nf-md-circle_slice_1..8
