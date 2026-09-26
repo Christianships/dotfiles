@@ -8,6 +8,13 @@
 # remembers the previous sample -- an item script that re-execs each time
 # cannot do that without blocking to take two samples of its own.
 
+# Every label gets a fixed, right-aligned width so the pill never changes
+# size as readings tick over (and never shoves the items to its left).
+# Sized for two-digit values in JetBrains Mono SemiBold 12 (~7.2pt/char):
+# "99°" / "99%" = 3 chars, "99.9GB" = 6 chars.
+LABEL_W3=22
+LABEL_W6=44
+
 # mem and cpu are one pill, so they override $GAP back down -- the default
 # would put a 10pt hole between the two readings inside a single background.
 sketchybar --add item mem right \
@@ -18,6 +25,8 @@ sketchybar --add item mem right \
         icon.padding_right=5 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
+        label.width=$LABEL_W6 \
+        label.align=right \
         label.color="$FG" \
         label.padding_right=9 \
         padding_left=1 \
@@ -31,6 +40,8 @@ sketchybar --add item cpu right \
         icon.padding_right=5 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
+        label.width=$LABEL_W3 \
+        label.align=right \
         label.color="$FG" \
         label.padding_right=4 \
         padding_right=1 \
@@ -44,6 +55,8 @@ sketchybar --add item gpu right \
         icon.padding_right=5 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
+        label.width=$LABEL_W3 \
+        label.align=right \
         label.color="$FG" \
         label.padding_right=4 \
         padding_right=1 \
@@ -57,6 +70,8 @@ sketchybar --add item temp right \
         icon.padding_right=4 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
+        label.width=$LABEL_W3 \
+        label.align=right \
         label.color="$FG" \
         label.padding_right=4 \
         padding_right=1 \
