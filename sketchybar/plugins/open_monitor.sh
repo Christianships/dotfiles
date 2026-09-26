@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
-# Click target for the CPU / RAM pills: jump to the nearest free workspace
-# and open btop there in Ghostty.
+# Click target for the CPU / GPU / RAM pills: toggle the Instances panel
+# (~/Developer/Instances) -- running apps and processes, with quit / kill.
+# The first click launches it; later clicks open and close the panel.
+#
+# Falls back to btop on the nearest free workspace when the app is missing.
 
 source "$CONFIG_DIR/plugins/_env.sh"
+
+if [ -d "$HOME/Applications/Instances.app" ]; then
+    open -a "$HOME/Applications/Instances.app"
+    exit 0
+fi
 
 MONITOR_CMD="${MONITOR_CMD:-btop}"
 
