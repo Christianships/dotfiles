@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Claude usage: 5-hour window · weekly window, one pill. Added in reverse
 # visual order (right region stacks right-to-left), so this renders as
-# "<hourglass> NN% · <calendar> NN%".
+# "<hourglass> NN% · <calendar> NN% · <$> today's cost".
 #
-# Only claude_wk runs the script; it updates both items in one request.
+# Only claude_wk runs the usage script; it updates both items in one request.
+# claude_cost has its own script: it shells out to ccusage (~1s), which
+# should not hold up the usage numbers.
 # update_freq is 120s -- the numbers move slowly and the endpoint is shared
 # with Claude Code itself, so there is no point hammering it.
 
@@ -22,6 +24,28 @@ sketchybar --add item claude_gap right \
         padding_left=0 \
         padding_right=0
 
+RAYCAST_USAGE="open -g 'raycast://extensions/nyatinte/ccusage/ccusage'"
+
+# Fixed, right-aligned width so the pill doesn't resize as the cost grows.
+# 36pt fits "99.99"; from $100 it drops the cents ("999"), so it still fits.
+sketchybar --add item claude_cost right \
+    --subscribe claude_cost system_woke \
+    --set claude_cost \
+        update_freq=120 \
+        icon="$ICON_CLAUDE_COST" \
+        icon.color="$W50" \
+        icon.padding_left=7 \
+        icon.padding_right=3 \
+        label="--" \
+        label.font="$FONT:SemiBold:12.0" \
+        label.color="$FG" \
+        label.width=36 \
+        label.align=right \
+        label.padding_right=9 \
+        padding_left=1 \
+        click_script="$RAYCAST_USAGE" \
+        script="$PLUGIN_DIR/claude_cost.sh"
+
 sketchybar --add item claude_wk right \
     --subscribe claude_wk system_woke \
     --set claude_wk \
@@ -33,9 +57,9 @@ sketchybar --add item claude_wk right \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
         label.color="$FG" \
-        label.padding_right=9 \
-        padding_left=1 \
-        click_script="open -g 'raycast://extensions/nyatinte/ccusage/ccusage'" \
+        label.padding_right=4 \
+        padding_right=1 \
+        click_script="$RAYCAST_USAGE" \
         script="$PLUGIN_DIR/claude_usage.sh"
 
 sketchybar --add item claude_5h right \
@@ -49,7 +73,7 @@ sketchybar --add item claude_5h right \
         label.color="$FG" \
         label.padding_right=4 \
         padding_right=1 \
-        click_script="open -g 'raycast://extensions/nyatinte/ccusage/ccusage'"
+        click_script="$RAYCAST_USAGE"
 
 sketchybar --add item claude_gap_left right \
     --set claude_gap_left \
@@ -59,7 +83,7 @@ sketchybar --add item claude_gap_left right \
         padding_left=0 \
         padding_right=0
 
-sketchybar --add bracket claude claude_5h claude_wk \
+sketchybar --add bracket claude claude_5h claude_wk claude_cost \
     --set claude \
         background.color="$GLASS" \
         background.border_color="$EDGE_SOFT" \
