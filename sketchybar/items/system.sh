@@ -12,6 +12,9 @@
 # size as readings tick over (and never shoves the items to its left).
 # Sized for two-digit values in JetBrains Mono SemiBold 12 (~7.2pt/char):
 # "99°" / "99%" = 3 chars, "99.9GB" = 6 chars.
+# The icons draw wider than their advance, so a label that fills its whole
+# width would touch the icon; icon.padding_right keeps 3pt of extra air
+# (5pt for mem, whose database glyph overhangs the most).
 LABEL_W3=22
 LABEL_W6=44
 
@@ -22,7 +25,7 @@ sketchybar --add item mem right \
         icon="$ICON_MEM" \
         icon.color="$W50" \
         icon.padding_left=7 \
-        icon.padding_right=5 \
+        icon.padding_right=10 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
         label.width=$LABEL_W6 \
@@ -37,7 +40,7 @@ sketchybar --add item cpu right \
         icon="$ICON_CPU" \
         icon.color="$W50" \
         icon.padding_left=7 \
-        icon.padding_right=5 \
+        icon.padding_right=8 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
         label.width=$LABEL_W3 \
@@ -52,7 +55,7 @@ sketchybar --add item gpu right \
         icon="$ICON_GPU" \
         icon.color="$W50" \
         icon.padding_left=7 \
-        icon.padding_right=5 \
+        icon.padding_right=8 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
         label.width=$LABEL_W3 \
@@ -67,7 +70,7 @@ sketchybar --add item temp right \
         icon="$ICON_TEMP" \
         icon.color="$W50" \
         icon.padding_left=9 \
-        icon.padding_right=4 \
+        icon.padding_right=7 \
         label="--" \
         label.font="$FONT:SemiBold:12.0" \
         label.width=$LABEL_W3 \
