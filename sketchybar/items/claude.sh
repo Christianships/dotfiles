@@ -27,8 +27,10 @@ sketchybar --add item claude_gap right \
 RAYCAST_USAGE="open -g 'raycast://extensions/nyatinte/ccusage/ccusage'"
 
 # No icon: the "$" is part of the green label so it reads as one "$107".
-# Fixed, right-aligned width so the pill doesn't resize as the cost grows.
-# 44pt fits "$99.99"; from $100 it drops the cents ("$999"), so it still fits.
+# Sized to its text, not a fixed width: a fixed 44pt was narrower than
+# "$1.81" plus padding, so the text spilled left into the gap. The gap to the
+# weekly % is 4 + 1 + 1 + 6 = 12pt, the same as between 5h and weekly
+# (4 + 1 + 7). The pill only grows when the cost gains a digit.
 sketchybar --add item claude_cost right \
     --subscribe claude_cost system_woke \
     --set claude_cost \
@@ -37,9 +39,7 @@ sketchybar --add item claude_cost right \
         label="\$--" \
         label.font="$FONT:SemiBold:12.0" \
         label.color="$MONEY" \
-        label.width=44 \
-        label.align=right \
-        label.padding_left=7 \
+        label.padding_left=6 \
         label.padding_right=9 \
         padding_left=1 \
         click_script="$RAYCAST_USAGE" \
