@@ -127,7 +127,7 @@ sketchybar --add item obs.follow right \
         background.height=22 \
         padding_left="$GAP" \
         padding_right="$GAP" \
-        click_script="$NODE_BIN /Users/christianaguilar/Documents/cTrack/scripts/obs-control.mjs follow toggle"
+        click_script="$NODE_BIN /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs follow toggle"
 
 
 # Restart the bridge on every config reload so it never doubles up.
