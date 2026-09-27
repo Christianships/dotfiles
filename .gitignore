@@ -12,3 +12,7 @@ raycast/
 # Backups are replayed as history, not kept as files
 *.bak*
 *.bak-*
+
+# Machine state and future tokens: written by Director, never committed
+obs/twitch-auth.json
+obs/iphone-camera.json
