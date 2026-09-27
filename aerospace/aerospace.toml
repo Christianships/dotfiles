@@ -85,8 +85,9 @@ automatically-unhide-macos-hidden-apps = true
     # Apps
     ctrl-enter = 'exec-and-forget open -na Ghostty'
     ctrl-shift-t = 'exec-and-forget /Users/christianaguilar/.config/aerospace/launch-agent-grid.sh'
-    # Search is one window (tabs only), so no -n: this focuses it, or launches it.
-    ctrl-b = 'exec-and-forget open -a Search'
+    # Search has no new-window command (tabs only), so -n starts another instance
+    # of the app: each press is a separate Search window.
+    ctrl-b = 'exec-and-forget open -na Search'
     # Disable accidental app quits via Command-Q; Control-Q remains the intentional quit shortcut.
     cmd-q = 'exec-and-forget true'
     ctrl-q = 'close --quit-if-last-window'
