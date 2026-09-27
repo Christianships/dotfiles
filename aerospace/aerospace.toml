@@ -50,7 +50,7 @@ automatically-unhide-macos-hidden-apps = true
 # Home workspaces. Apps land in the same place however they were launched --
 # from a keybind, from Spotlight, or by another app.
 #
-# Ghostty and Helium are deliberately absent: terminals and browser windows
+# Ghostty and the browser are deliberately absent: terminals and browser windows
 # open on whatever workspace is focused rather than being pulled to a fixed one.
 [[on-window-detected]]
     if.app-id = 'com.t3tools.t3code'
@@ -85,7 +85,8 @@ automatically-unhide-macos-hidden-apps = true
     # Apps
     ctrl-enter = 'exec-and-forget open -na Ghostty'
     ctrl-shift-t = 'exec-and-forget /Users/christianaguilar/.config/aerospace/launch-agent-grid.sh'
-    ctrl-b = 'exec-and-forget open -na Helium --args --new-window'
+    # Search is one window (tabs only), so no -n: this focuses it, or launches it.
+    ctrl-b = 'exec-and-forget open -a Search'
     # Disable accidental app quits via Command-Q; Control-Q remains the intentional quit shortcut.
     cmd-q = 'exec-and-forget true'
     ctrl-q = 'close --quit-if-last-window'
