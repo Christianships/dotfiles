@@ -123,7 +123,6 @@ automatically-unhide-macos-hidden-apps = true
     ctrl-slash = 'layout tiles horizontal vertical'
     ctrl-comma = 'layout accordion horizontal vertical'
     ctrl-f = 'fullscreen'
-    ctrl-space = 'layout floating tiling'
     # Super+Shift+= ("make equal"). Plain Super+E is left to the terminal and
     # macOS text fields, where it means end-of-line.
     ctrl-shift-equal = 'balance-sizes'
