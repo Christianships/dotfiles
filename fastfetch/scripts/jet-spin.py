@@ -4,11 +4,12 @@
     jet-spin             spin 360° on a turntable, like a model in a 3D editor
     jet-spin --orbit     two jets flying in a circle
     jet-spin --orbit 3   any number of jets
-    jet-spin --fetch     fastfetch with the logo spinning in 3D until you press a key
-    jet-spin --fetch --once   just one spin, then settle
+    jet-spin --fetch     fastfetch with the logo animated like the Mach Saver
+                         afterburner jet, until you press a key
+    jet-spin --fetch --once   just the intro, then settle
     jet-spin --fetch --bg PIDFILE SHELLPID
-                         fastfetch, then hand back the prompt while the jet keeps
-                         spinning in the background (used by ~/.zshrc; the shell
+                         fastfetch, then hand back the prompt while the logo keeps
+                         animating in the background (used by ~/.zshrc; the shell
                          stops it before any output via the pid in PIDFILE)
 
 Any key stops it. In --fetch the key still goes to your prompt.
@@ -16,6 +17,7 @@ Any key stops it. In --fetch the key still goes to your prompt.
 import fcntl
 import math
 import os
+import random
 import re
 import select
 import signal
@@ -229,58 +231,56 @@ class Orbit:
                 canvas.plot(x + (dx * c - dy * s) * scale, py, GRADIENT[min(5, int(py * 6 // H))], prio=1)
 
 
-def smoothstep(x):
-    x = min(1.0, max(0.0, x))
-    return x * x * (3 - 2 * x)
+class Afterburner:
+    """The jet from the Mach Saver afterburner screensaver: its dots flash in left
+    to right, then it bobs and drifts, a shine sweeps across it every 5s, and
+    speed lines streak off behind it. Coordinates are braille dots."""
 
-
-class FetchSpin(Turntable):
-    """The fastfetch logo: starts flat exactly as fastfetch draws it, tilts back and
-    spins. Looping, it keeps spinning; once, it lays flat again after one turn.
-    No grid or labels, just the jet."""
-
-    DURATION = 3.6            # one spin, for --once
-    TURN = 2 * math.pi / 3    # looping speed: a turn every 3s
+    ONCE = 3.0   # --once: the intro plus a sweep, then settle
 
     def __init__(self, dots, pad):
-        super().__init__(dots)
-        self.pad = pad
-        xs, ys = [x for x, _ in dots], [y for _, y in dots]
-        self.art_h = max(ys) + 1
-        # Where fastfetch puts the jet: `pad` columns in, top row flush.
-        self.origin = (pad * 2 + sum(xs) / len(xs), sum(ys) / len(ys))
-        # Keep each model point's original art row for the fastfetch colour bands.
-        self.rows = []
-        cy = self.origin[1]
-        for X, Y, Z, shade in self.model:
-            self.rows.append(Z + cy)
+        self.dots = dots
+        self.ox = pad * 2
+        self.w = max(x for x, _ in dots) + 1
+        self.h = max(y for _, y in dots) + 1
+        self.reveal = [0.3 + x / self.w * 1.1 + random.uniform(0, 0.25) for x, _ in dots]
+        self.streaks = []   # [x, y, speed, length]
+        self.last = 0.0
 
-    def draw(self, canvas, t, loop=False):
-        if loop:
-            tilt = smoothstep(t / 0.7)
-            # Speed ramps up over the first second, then holds.
-            yaw = self.TURN * (t * t / 2 if t < 1 else t - 0.5)
-        else:
-            tilt = smoothstep(t / 0.7) * (1 - smoothstep((t - (self.DURATION - 0.7)) / 0.7))
-            yaw = 2 * math.pi * smoothstep((t - 0.3) / (self.DURATION - 0.6))
-        elevation = math.radians(90 - 40 * tilt)
-        ce, se = math.cos(elevation), math.sin(elevation)
-        c, s = math.cos(yaw), math.sin(yaw)
-        focal = self.reach * 4
-        ox, oy = self.origin
-        for (X, Y, Z, shade), row in zip(self.model, self.rows):
-            Y *= tilt  # thickness grows in as it tilts, so flat frames match the static logo
-            x1 = X * c - Z * s
-            z1 = X * s + Z * c
-            # Art-down (+Z) faces the camera, so looking straight down (90°)
-            # gives back the art exactly; height (Y) points up the screen.
-            sy = z1 * se - Y * ce
-            depth = -z1 * ce - Y * se
-            p = focal / (focal + depth)
-            band = min(5, int(row * 6 // self.art_h))
-            shading = int(round(depth / self.reach * 1.5 * tilt))
-            idx = min(len(GRADIENT) - 1, max(0, band + shading + (shade if tilt > 0.3 else 0)))
-            canvas.plot(ox + x1 * p, oy + sy * p, GRADIENT[idx], prio=2, depth=depth)
+    @staticmethod
+    def lighten(colour, amount):
+        return tuple(int(c + (255 - c) * amount) for c in colour)
+
+    def draw(self, canvas, t, loop=True):
+        dt, self.last = min(0.1, max(0.0, t - self.last)), t
+        bob = round(1 - math.cos(t * 0.9))            # 0..2 dots down
+        sway = round(math.sin(t * 0.45) * 2)          # -2..2 dots
+
+        # Speed lines leave from the body and fade out before the left edge.
+        if t > 1.2 and random.random() < dt * 10:
+            self.streaks.append([self.w * random.uniform(0.1, 0.45), self.h * random.uniform(0.3, 0.72),
+                                 random.uniform(60, 100), random.uniform(6, 16)])
+        for st in self.streaks:
+            st[0] -= st[2] * dt
+        self.streaks = [st for st in self.streaks if st[0] + st[3] > 0]
+        for x, y, _, length in self.streaks:
+            fade = min(1.0, (x + length) / (self.w * 0.3))
+            colour = GRADIENT[7 - int(fade * 3)] if fade < 1 else GRADIENT[4]
+            for i in range(int(length)):
+                canvas.plot(self.ox + x + i + sway, y + bob, colour, prio=0)
+
+        span = self.w + self.h + 20
+        sweep = (t % 5.0) / 5.0 * span - 10
+        for (x, y), r in zip(self.dots, self.reveal):
+            shown = t - r
+            if shown < 0:
+                continue
+            flash = max(0.0, 1 - shown / 0.35)
+            dist = abs(x + y * 0.6 - sweep)
+            shine = (1 - dist / 5) * 0.8 if dist < 5 else 0.0
+            level = round(max(flash, shine) * 3)       # 0..3, brighter wins the cell
+            colour = self.lighten(GRADIENT[min(5, y * 6 // self.h)], level / 3 * 0.85)
+            canvas.plot(self.ox + x + sway, y + bob, colour, prio=1 + level)
 
 
 def static_logo(path, width):
@@ -307,7 +307,7 @@ def fetch(loop):
     info = subprocess.run(["fastfetch", "--logo", "none", "--pipe", "false"],
                           capture_output=True, text=True).stdout.rstrip("\n").split("\n")
     final = static_logo(LOGO, width)
-    height = max(len(final), len(info))
+    height = max(len(final) + 1, len(info))   # a spare row for the bob
     final += [" " * width] * (height - len(final))
     info += [""] * (height - len(info))
     out = sys.stdout
@@ -324,7 +324,7 @@ def fetch(loop):
         out.write("\n")
         return
 
-    scene = FetchSpin(load_dots(LOGO), pad)
+    scene = Afterburner(load_dots(LOGO), pad)
     # Watch for a key without reading it, so it's still there for the prompt.
     # TCSANOW (not the default flush) keeps anything already typed.
     fd = sys.stdin.fileno()
@@ -336,7 +336,7 @@ def fetch(loop):
     try:
         while True:
             t = time.monotonic() - start
-            if not loop and t >= FetchSpin.DURATION:
+            if not loop and t >= Afterburner.ONCE:
                 break
             if saved and select.select([sys.stdin], [], [], 0)[0]:
                 break
@@ -381,7 +381,7 @@ def cursor_row(fd):
 
 def fetch_background(pidfile, shell_pid):
     """Print fastfetch with the static logo, then fork an animator that redraws just
-    the logo in place, spinning, while the prompt sits below it. The shell kills it
+    the logo in place, animated, while the prompt sits below it. The shell kills it
     before running anything; on SIGTERM it puts the static logo back first."""
     pad, gap = 2, 2
     art = re.sub(r"\$[0-9]", "", open(LOGO, encoding="utf-8").read()).splitlines()
@@ -389,7 +389,7 @@ def fetch_background(pidfile, shell_pid):
     info = subprocess.run(["fastfetch", "--logo", "none", "--pipe", "false"],
                           capture_output=True, text=True).stdout.rstrip("\n").split("\n")
     final = static_logo(LOGO, width)
-    height = max(len(final), len(info))
+    height = max(len(final) + 1, len(info))   # a spare row for the bob
     final += [" " * width] * (height - len(final))
     info += [""] * (height - len(info))
     out = sys.stdout
@@ -423,8 +423,7 @@ def fetch_background(pidfile, shell_pid):
     stopping = []
     signal.signal(signal.SIGTERM, lambda *_: stopping.append(1))
     signal.signal(signal.SIGHUP, lambda *_: stopping.append(1))
-    scene = FetchSpin(load_dots(LOGO), pad)
-    cache, steps = {}, 72   # after the tilt-in, one turn of frames is cached and replayed
+    scene = Afterburner(load_dots(LOGO), pad)
     start = time.monotonic()
     try:
         while not stopping:
@@ -434,19 +433,9 @@ def fetch_background(pidfile, shell_pid):
                     return  # resized: the text reflowed, so the rows are no longer ours
             except OSError:
                 return
-            t = time.monotonic() - start
-            if t < 1.2:
-                canvas = Canvas(width, height)
-                scene.draw(canvas, t, loop=True)
-                lines = canvas.lines()
-            else:
-                k = int(FetchSpin.TURN * (t - 0.5) / (2 * math.pi) * steps) % steps
-                if k not in cache:
-                    canvas = Canvas(width, height)
-                    scene.draw(canvas, 0.5 + (steps + k) * 2 * math.pi / (steps * FetchSpin.TURN), loop=True)
-                    cache[k] = canvas.lines()
-                lines = cache[k]
-            paint(lines)
+            canvas = Canvas(width, height)
+            scene.draw(canvas, time.monotonic() - start)
+            paint(canvas.lines())
             time.sleep(1 / 24)
         paint(final)
     finally:
