@@ -233,16 +233,19 @@ class Orbit:
 
 class Afterburner:
     """The jet from the Mach Saver afterburner screensaver: its dots flash in left
-    to right, then it bobs and drifts, a shine sweeps across it every 5s, and
-    speed lines streak off behind it. Coordinates are braille dots."""
+    to right, then it holds still, centred in its box, while a shine sweeps across
+    it every 5s and speed lines streak off behind it. Coordinates are braille dots."""
 
     ONCE = 3.0   # --once: the intro plus a sweep, then settle
 
-    def __init__(self, dots, pad):
+    def __init__(self, dots, box):
+        """`box` is (left, top, width, height) in dots; the jet is centred in it."""
         self.dots = dots
-        self.ox = pad * 2
         self.w = max(x for x, _ in dots) + 1
         self.h = max(y for _, y in dots) + 1
+        left, top, bw, bh = box
+        self.ox = left + round((bw - self.w) / 2)
+        self.oy = top + round((bh - self.h) / 2)
         self.reveal = [0.3 + x / self.w * 1.1 + random.uniform(0, 0.25) for x, _ in dots]
         self.streaks = []   # [x, y, speed, length]
         self.last = 0.0
@@ -253,8 +256,6 @@ class Afterburner:
 
     def draw(self, canvas, t, loop=True):
         dt, self.last = min(0.1, max(0.0, t - self.last)), t
-        bob = round(1 - math.cos(t * 0.9))            # 0..2 dots down
-        sway = round(math.sin(t * 0.45) * 2)          # -2..2 dots
 
         # Speed lines leave from the body and fade out before the left edge.
         if t > 1.2 and random.random() < dt * 10:
@@ -267,7 +268,7 @@ class Afterburner:
             fade = min(1.0, (x + length) / (self.w * 0.3))
             colour = GRADIENT[7 - int(fade * 3)] if fade < 1 else GRADIENT[4]
             for i in range(int(length)):
-                canvas.plot(self.ox + x + i + sway, y + bob, colour, prio=0)
+                canvas.plot(self.ox + x + i, self.oy + y, colour, prio=0)
 
         span = self.w + self.h + 20
         sweep = (t % 5.0) / 5.0 * span - 10
@@ -280,36 +281,47 @@ class Afterburner:
             shine = (1 - dist / 5) * 0.8 if dist < 5 else 0.0
             level = round(max(flash, shine) * 3)       # 0..3, brighter wins the cell
             colour = self.lighten(GRADIENT[min(5, y * 6 // self.h)], level / 3 * 0.85)
-            canvas.plot(self.ox + x + sway, y + bob, colour, prio=1 + level)
+            canvas.plot(self.ox + x, self.oy + y, colour, prio=1 + level)
+
+    def draw_static(self, canvas):
+        """The settled logo: every dot in its gradient band, nothing moving."""
+        for x, y in self.dots:
+            canvas.plot(self.ox + x, self.oy + y, GRADIENT[min(5, y * 6 // self.h)], prio=1)
 
 
-def static_logo(path, width):
-    """The logo exactly as fastfetch prints it: $1..$6 switch colours, padded to `width`."""
-    lines = []
-    colour = GRADIENT[0]
-    for raw in open(path, encoding="utf-8").read().splitlines():
-        out, visible = [], 0
-        for part in re.split(r"(\$[1-6])", raw):
-            if re.fullmatch(r"\$[1-6]", part):
-                colour = GRADIENT[int(part[1]) - 1]
-            elif part:
-                out.append("\x1b[38;2;%d;%d;%dm%s" % (colour + (part,)))
-                visible += len(part)
-        lines.append(" " * 2 + "".join(out) + "\x1b[0m" + " " * max(0, width - 2 - visible))
-    return lines
+def fetch_layout():
+    """fastfetch's info on the right and a box for the jet on the left, centred on
+    each other vertically, under fastfetch's usual blank line. The static logo is
+    drawn from the same dots as the animation so it settles exactly in place.
+    Returns (width, info rows, scene, static logo rows)."""
+    dots = load_dots(LOGO)
+    jet_cols = (max(x for x, _ in dots) + 2) // 2
+    width = 2 + jet_cols + 2
+    info = subprocess.run(["fastfetch", "--logo", "none", "--pipe", "false"],
+                          capture_output=True, text=True).stdout.split("\n")
+    blank = lambda l: not re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", l).strip()
+    while info and blank(info[0]):
+        info.pop(0)
+    while info and blank(info[-1]):
+        info.pop()
+    # Centre the jet on the boxes to the dot (a quarter row), keeping it below
+    # the blank first row. Its top dot sits `overhang` dots above the boxes' top.
+    jet_h = max(y for _, y in dots) + 1
+    overhang = (jet_h - len(info) * 4) / 2
+    info_top = max(1, math.ceil((4 + overhang) / 4))
+    jet_top = round(info_top * 4 - overhang)
+    rows = max(info_top + len(info), math.ceil((jet_top + jet_h) / 4))
+    info = [""] * info_top + info + [""] * (rows - info_top - len(info))
+    scene = Afterburner(dots, (0, jet_top, width * 2, jet_h))
+    canvas = Canvas(width, rows)
+    scene.draw_static(canvas)
+    return width, info, scene, canvas.lines()
 
 
 def fetch(loop):
-    """fastfetch with the logo spinning in 3D, then settling into the normal static logo."""
-    pad, gap = 2, 2
-    art = [l for l in re.sub(r"\$[0-9]", "", open(LOGO, encoding="utf-8").read()).splitlines()]
-    width = pad + max(len(l) for l in art) + gap
-    info = subprocess.run(["fastfetch", "--logo", "none", "--pipe", "false"],
-                          capture_output=True, text=True).stdout.rstrip("\n").split("\n")
-    final = static_logo(LOGO, width)
-    height = max(len(final) + 1, len(info))   # a spare row for the bob
-    final += [" " * width] * (height - len(final))
-    info += [""] * (height - len(info))
+    """fastfetch with the logo animated, then settling into the normal static logo."""
+    width, info, scene, final = fetch_layout()
+    height = len(info)
     out = sys.stdout
 
     def show(left):
@@ -324,7 +336,6 @@ def fetch(loop):
         out.write("\n")
         return
 
-    scene = Afterburner(load_dots(LOGO), pad)
     # Watch for a key without reading it, so it's still there for the prompt.
     # TCSANOW (not the default flush) keeps anything already typed.
     fd = sys.stdin.fileno()
@@ -383,15 +394,8 @@ def fetch_background(pidfile, shell_pid):
     """Print fastfetch with the static logo, then fork an animator that redraws just
     the logo in place, animated, while the prompt sits below it. The shell kills it
     before running anything; on SIGTERM it puts the static logo back first."""
-    pad, gap = 2, 2
-    art = re.sub(r"\$[0-9]", "", open(LOGO, encoding="utf-8").read()).splitlines()
-    width = pad + max(len(l) for l in art) + gap
-    info = subprocess.run(["fastfetch", "--logo", "none", "--pipe", "false"],
-                          capture_output=True, text=True).stdout.rstrip("\n").split("\n")
-    final = static_logo(LOGO, width)
-    height = max(len(final) + 1, len(info))   # a spare row for the bob
-    final += [" " * width] * (height - len(final))
-    info += [""] * (height - len(info))
+    width, info, scene, final = fetch_layout()
+    height = len(info)
     out = sys.stdout
     out.write("\r" + "\n".join("\x1b[2K" + l + r for l, r in zip(final, info)) + "\x1b[0m\n")
     out.flush()
@@ -423,7 +427,6 @@ def fetch_background(pidfile, shell_pid):
     stopping = []
     signal.signal(signal.SIGTERM, lambda *_: stopping.append(1))
     signal.signal(signal.SIGHUP, lambda *_: stopping.append(1))
-    scene = Afterburner(load_dots(LOGO), pad)
     start = time.monotonic()
     try:
         while not stopping:
