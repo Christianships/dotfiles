@@ -16,6 +16,9 @@ autoload -U colors && colors
 PS1="%{$fg[magenta]%}%n@%m %~%{$reset_color%}$ "
 
 eval "$(starship init zsh)"
+# fastfetch, with the jet logo doing one 3D spin before it settles
+# (~/.config/fastfetch/scripts/jet-spin.py). Falls back to plain fastfetch.
+_fetch() { python3 ~/.config/fastfetch/scripts/jet-spin.py --fetch 2>/dev/null || fastfetch; }
 # fastfetch only in the first Ghostty shell of each Ghostty launch. Ghostty is
 # one process for all windows/tabs, so its PID identifies the launch; mkdir is
 # atomic, so only one shell can claim it even when windows open simultaneously.
@@ -36,12 +39,13 @@ if [[ $TERM_PROGRAM == ghostty ]]; then
       fi
     done
     unset _ffsize _ffsame
-    fastfetch
+    _fetch
   fi
   unset _gpid
 else
-  fastfetch
+  _fetch
 fi
+unfunction _fetch
 
 source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 # Everything you type at the prompt renders in strong purple (#A855F7, the

@@ -4,14 +4,16 @@
     jet-spin             spin 360° on a turntable, like a model in a 3D editor
     jet-spin --orbit     two jets flying in a circle
     jet-spin --orbit 3   any number of jets
+    jet-spin --fetch     fastfetch, with the logo doing one 3D spin before it settles
 
-Any key quits.
+Any key quits the first three.
 """
 import math
 import os
 import re
 import select
 import signal
+import subprocess
 import sys
 import termios
 import time
@@ -80,7 +82,12 @@ class Canvas:
             self.text[(col + i, row)] = (ch, colour)
 
     def render(self):
-        out = ["\x1b[H"]
+        rows = self.lines()
+        return "\x1b[H" + "".join(l + "\x1b[K" + ("\n" if i < len(rows) - 1 else "") for i, l in enumerate(rows))
+
+    def lines(self):
+        """One string per row, each exactly `cols` wide, colours reset at the end."""
+        out = []
         for r in range(self.rows):
             line, colour = [], None
             for c in range(self.cols):
@@ -97,8 +104,8 @@ class Canvas:
                     colour = col
                     line.append("\x1b[38;2;%d;%d;%dm" % col)
                 line.append(ch)
-            out.append("".join(line) + "\x1b[0m\x1b[K" + ("\n" if r < self.rows - 1 else ""))
-        return "".join(out)
+            out.append("".join(line) + "\x1b[0m")
+        return out
 
 
 class Turntable:
@@ -216,7 +223,116 @@ class Orbit:
                 canvas.plot(x + (dx * c - dy * s) * scale, py, GRADIENT[min(5, int(py * 6 // H))], prio=1)
 
 
+def smoothstep(x):
+    x = min(1.0, max(0.0, x))
+    return x * x * (3 - 2 * x)
+
+
+class FetchSpin(Turntable):
+    """The fastfetch logo: starts flat exactly as fastfetch draws it, tilts back,
+    spins once, and lays flat again. No grid or labels, just the jet."""
+
+    DURATION = 3.6
+
+    def __init__(self, dots, pad):
+        super().__init__(dots)
+        self.pad = pad
+        xs, ys = [x for x, _ in dots], [y for _, y in dots]
+        self.art_h = max(ys) + 1
+        # Where fastfetch puts the jet: `pad` columns in, top row flush.
+        self.origin = (pad * 2 + sum(xs) / len(xs), sum(ys) / len(ys))
+        # Keep each model point's original art row for the fastfetch colour bands.
+        self.rows = []
+        cy = self.origin[1]
+        for X, Y, Z, shade in self.model:
+            self.rows.append(Z + cy)
+
+    def draw(self, canvas, t):
+        tilt = smoothstep(t / 0.7) * (1 - smoothstep((t - (self.DURATION - 0.7)) / 0.7))
+        yaw = 2 * math.pi * smoothstep((t - 0.3) / (self.DURATION - 0.6))
+        elevation = math.radians(90 - 40 * tilt)
+        ce, se = math.cos(elevation), math.sin(elevation)
+        c, s = math.cos(yaw), math.sin(yaw)
+        focal = self.reach * 4
+        ox, oy = self.origin
+        for (X, Y, Z, shade), row in zip(self.model, self.rows):
+            Y *= tilt  # thickness grows in as it tilts, so flat frames match the static logo
+            x1 = X * c - Z * s
+            z1 = X * s + Z * c
+            # Art-down (+Z) faces the camera, so looking straight down (90°)
+            # gives back the art exactly; height (Y) points up the screen.
+            sy = z1 * se - Y * ce
+            depth = -z1 * ce - Y * se
+            p = focal / (focal + depth)
+            band = min(5, int(row * 6 // self.art_h))
+            shading = int(round(depth / self.reach * 1.5 * tilt))
+            idx = min(len(GRADIENT) - 1, max(0, band + shading + (shade if tilt > 0.3 else 0)))
+            canvas.plot(ox + x1 * p, oy + sy * p, GRADIENT[idx], prio=2, depth=depth)
+
+
+def static_logo(path, width):
+    """The logo exactly as fastfetch prints it: $1..$6 switch colours, padded to `width`."""
+    lines = []
+    colour = GRADIENT[0]
+    for raw in open(path, encoding="utf-8").read().splitlines():
+        out, visible = [], 0
+        for part in re.split(r"(\$[1-6])", raw):
+            if re.fullmatch(r"\$[1-6]", part):
+                colour = GRADIENT[int(part[1]) - 1]
+            elif part:
+                out.append("\x1b[38;2;%d;%d;%dm%s" % (colour + (part,)))
+                visible += len(part)
+        lines.append(" " * 2 + "".join(out) + "\x1b[0m" + " " * max(0, width - 2 - visible))
+    return lines
+
+
+def fetch():
+    """fastfetch with the logo spinning once in 3D before it settles into the normal static logo."""
+    pad, gap = 2, 2
+    art = [l for l in re.sub(r"\$[0-9]", "", open(LOGO, encoding="utf-8").read()).splitlines()]
+    width = pad + max(len(l) for l in art) + gap
+    info = subprocess.run(["fastfetch", "--logo", "none", "--pipe", "false"],
+                          capture_output=True, text=True).stdout.rstrip("\n").split("\n")
+    final = static_logo(LOGO, width)
+    height = max(len(final), len(info))
+    final += [" " * width] * (height - len(final))
+    info += [""] * (height - len(info))
+    out = sys.stdout
+
+    def show(left):
+        out.write("\r" + "\n".join("\x1b[2K" + l + r for l, r in zip(left, info)))
+
+    try:
+        rows_available = os.get_terminal_size().lines
+    except OSError:
+        rows_available = 0
+    if not out.isatty() or rows_available <= height:
+        show(final)
+        out.write("\n")
+        return
+
+    scene = FetchSpin(load_dots(LOGO), pad)
+    out.write("\x1b[?25l" + "\n" * height + "\x1b[%dA" % height)
+    start = time.monotonic()
+    try:
+        while (t := time.monotonic() - start) < FetchSpin.DURATION:
+            canvas = Canvas(width, height)
+            scene.draw(canvas, t)
+            show(canvas.lines())
+            out.write("\x1b[%dA\r" % (height - 1))
+            out.flush()
+            time.sleep(1 / 30)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        show(final)
+        out.write("\x1b[0m\x1b[?25h\n")
+        out.flush()
+
+
 def main():
+    if "--fetch" in sys.argv:
+        return fetch()
     dots = load_dots(LOGO)
     if "--orbit" in sys.argv:
         nums = [a for a in sys.argv[1:] if a.isdigit()]
