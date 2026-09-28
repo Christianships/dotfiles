@@ -4,9 +4,10 @@
     jet-spin             spin 360° on a turntable, like a model in a 3D editor
     jet-spin --orbit     two jets flying in a circle
     jet-spin --orbit 3   any number of jets
-    jet-spin --fetch     fastfetch, with the logo doing one 3D spin before it settles
+    jet-spin --fetch     fastfetch with the logo spinning in 3D until you press a key
+    jet-spin --fetch --once   just one spin, then settle
 
-Any key quits the first three.
+Any key stops it. In --fetch the key still goes to your prompt.
 """
 import math
 import os
@@ -229,10 +230,12 @@ def smoothstep(x):
 
 
 class FetchSpin(Turntable):
-    """The fastfetch logo: starts flat exactly as fastfetch draws it, tilts back,
-    spins once, and lays flat again. No grid or labels, just the jet."""
+    """The fastfetch logo: starts flat exactly as fastfetch draws it, tilts back and
+    spins. Looping, it keeps spinning; once, it lays flat again after one turn.
+    No grid or labels, just the jet."""
 
-    DURATION = 3.6
+    DURATION = 3.6            # one spin, for --once
+    TURN = 2 * math.pi / 3    # looping speed: a turn every 3s
 
     def __init__(self, dots, pad):
         super().__init__(dots)
@@ -247,9 +250,14 @@ class FetchSpin(Turntable):
         for X, Y, Z, shade in self.model:
             self.rows.append(Z + cy)
 
-    def draw(self, canvas, t):
-        tilt = smoothstep(t / 0.7) * (1 - smoothstep((t - (self.DURATION - 0.7)) / 0.7))
-        yaw = 2 * math.pi * smoothstep((t - 0.3) / (self.DURATION - 0.6))
+    def draw(self, canvas, t, loop=False):
+        if loop:
+            tilt = smoothstep(t / 0.7)
+            # Speed ramps up over the first second, then holds.
+            yaw = self.TURN * (t * t / 2 if t < 1 else t - 0.5)
+        else:
+            tilt = smoothstep(t / 0.7) * (1 - smoothstep((t - (self.DURATION - 0.7)) / 0.7))
+            yaw = 2 * math.pi * smoothstep((t - 0.3) / (self.DURATION - 0.6))
         elevation = math.radians(90 - 40 * tilt)
         ce, se = math.cos(elevation), math.sin(elevation)
         c, s = math.cos(yaw), math.sin(yaw)
@@ -286,8 +294,8 @@ def static_logo(path, width):
     return lines
 
 
-def fetch():
-    """fastfetch with the logo spinning once in 3D before it settles into the normal static logo."""
+def fetch(loop):
+    """fastfetch with the logo spinning in 3D, then settling into the normal static logo."""
     pad, gap = 2, 2
     art = [l for l in re.sub(r"\$[0-9]", "", open(LOGO, encoding="utf-8").read()).splitlines()]
     width = pad + max(len(l) for l in art) + gap
@@ -312,12 +320,23 @@ def fetch():
         return
 
     scene = FetchSpin(load_dots(LOGO), pad)
+    # Watch for a key without reading it, so it's still there for the prompt.
+    # TCSANOW (not the default flush) keeps anything already typed.
+    fd = sys.stdin.fileno()
+    saved = termios.tcgetattr(fd) if sys.stdin.isatty() else None
+    if saved:
+        tty.setcbreak(fd, termios.TCSANOW)
     out.write("\x1b[?25l" + "\n" * height + "\x1b[%dA" % height)
     start = time.monotonic()
     try:
-        while (t := time.monotonic() - start) < FetchSpin.DURATION:
+        while True:
+            t = time.monotonic() - start
+            if not loop and t >= FetchSpin.DURATION:
+                break
+            if saved and select.select([sys.stdin], [], [], 0)[0]:
+                break
             canvas = Canvas(width, height)
-            scene.draw(canvas, t)
+            scene.draw(canvas, t, loop)
             show(canvas.lines())
             out.write("\x1b[%dA\r" % (height - 1))
             out.flush()
@@ -325,6 +344,8 @@ def fetch():
     except KeyboardInterrupt:
         pass
     finally:
+        if saved:
+            termios.tcsetattr(fd, termios.TCSANOW, saved)
         show(final)
         out.write("\x1b[0m\x1b[?25h\n")
         out.flush()
@@ -332,7 +353,7 @@ def fetch():
 
 def main():
     if "--fetch" in sys.argv:
-        return fetch()
+        return fetch(loop="--once" not in sys.argv)
     dots = load_dots(LOGO)
     if "--orbit" in sys.argv:
         nums = [a for a in sys.argv[1:] if a.isdigit()]
