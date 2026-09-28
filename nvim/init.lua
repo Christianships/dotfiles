@@ -1138,9 +1138,61 @@ local dashboard_spider = {
   { 6, "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⢷⣶⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" },
 }
 
-local function spider_header()
+-- The jet is read from the fastfetch logo file, so there's one copy of it. Its
+-- $1..$6 markers pick the gradient step. Spaces become braille blanks and every
+-- row is padded to the same width so centring doesn't shift rows against each other.
+local function load_jet()
+  local fh = io.open(vim.fn.expand("~/.config/fastfetch/txt/jet.txt"), "r")
+  if not fh then return nil end
+  local rows, band, width = {}, 1, 0
+  for line in fh:lines() do
+    local n = line:match("^%$(%d)")
+    if n then band = tonumber(n) end
+    line = line:gsub("%$%d", ""):gsub(" ", "⠀")
+    if vim.fn.strchars(line) > 0 then
+      rows[#rows + 1] = { band, line }
+      width = math.max(width, vim.fn.strchars(line))
+    end
+  end
+  fh:close()
+  for _, row in ipairs(rows) do
+    row[2] = row[2] .. ("⠀"):rep(width - vim.fn.strchars(row[2]))
+  end
+  return rows
+end
+
+-- Start screen logo: "spider" or "jet". Switch with :Logo (or `l` on the start
+-- screen); the choice is remembered in stdpath("state")/dashboard-logo.
+local logo_file = vim.fn.stdpath("state") .. "/dashboard-logo"
+local logos = { spider = function() return dashboard_spider end, jet = load_jet }
+
+local function current_logo()
+  local fh = io.open(logo_file, "r")
+  local name = fh and fh:read("*l")
+  if fh then fh:close() end
+  return logos[name] and name or "jet"
+end
+
+local function set_logo(name)
+  name = name or (current_logo() == "jet" and "spider" or "jet")
+  if not logos[name] then
+    vim.notify("Unknown logo: " .. name .. " (spider or jet)", vim.log.levels.WARN)
+    return
+  end
+  local fh = io.open(logo_file, "w")
+  if fh then fh:write(name, "\n"); fh:close() end
+  if package.loaded.snacks then Snacks.dashboard.update() end
+end
+
+vim.api.nvim_create_user_command("Logo", function(o) set_logo(o.args ~= "" and o.args or nil) end, {
+  nargs = "?",
+  complete = function() return vim.tbl_keys(logos) end,
+  desc = "Switch the start screen logo (spider/jet)",
+})
+
+local function logo_header()
   local section = { padding = 1 }
-  for _, row in ipairs(dashboard_spider) do
+  for _, row in ipairs(logos[current_logo()]() or dashboard_spider) do
     table.insert(section, { text = { { row[2], hl = "DashSpider" .. row[1] } }, align = "center" })
   end
   return section
@@ -1705,7 +1757,7 @@ require("lazy").setup({
       words = {},        -- highlight references under the cursor
       scroll = {},       -- smooth scrolling
       dashboard = {
-        width = 50,
+        width = 58, -- fits the jet (56 wide) as well as the spider
         preset = {
           -- stylua: ignore
           keys = {
@@ -1715,12 +1767,13 @@ require("lazy").setup({
             { icon = "\u{f013} ", key = ".", desc = "> Configs", action = function() pick_configs() end },
             { icon = "\u{f09b} ", key = "g", desc = "> GitHub", action = function() pick_github() end },
             { icon = "\u{f11c} ", key = "?", desc = "> Keymaps", action = function() Snacks.picker.keymaps() end },
+            { icon = "\u{f03e} ", key = "l", desc = "> Switch Logo", action = function() set_logo() end },
             { icon = "\u{f021} ", key = "s", desc = "> Restore Session", action = function() require("persistence").load() end },
             { icon = "\u{f057} ", key = "q", desc = "> Quit", action = ":qa" },
           },
         },
         sections = {
-          spider_header,
+          logo_header,
           { section = "keys", gap = 1, padding = 1 },
           { section = "startup" },
         },
