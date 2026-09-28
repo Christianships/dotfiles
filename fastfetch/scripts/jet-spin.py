@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Jets flying in circles in the terminal, drawn in braille like the fastfetch logo.
+"""The fastfetch braille jet, animated in the terminal.
 
-    jet-spin            two jets
-    jet-spin 3          any number of jets
-    jet-spin 1 --spin   one jet spinning in place
+    jet-spin             spin 360° on a turntable, like a model in a 3D editor
+    jet-spin --orbit     two jets flying in a circle
+    jet-spin --orbit 3   any number of jets
 
 Any key quits.
 """
@@ -18,32 +18,211 @@ import time
 import tty
 
 LOGO = os.path.expanduser("~/.config/fastfetch/txt/jet.txt")
-# Same six-step purple as the fastfetch logo, light to deep.
-GRADIENT = [(236, 196, 255), (218, 166, 255), (200, 138, 252), (182, 112, 244), (164, 92, 234), (146, 76, 222)]
+# The fastfetch purple, light to deep, plus two darker steps for the far side.
+GRADIENT = [(236, 196, 255), (218, 166, 255), (200, 138, 252), (182, 112, 244),
+            (164, 92, 234), (146, 76, 222), (118, 62, 184), (92, 52, 140)]
 TRAIL = (61, 47, 92)
-BITS = [(0, 0, 0x01), (0, 1, 0x02), (0, 2, 0x04), (1, 0, 0x08), (1, 1, 0x10), (1, 2, 0x20), (0, 3, 0x40), (1, 3, 0x80)]
+GRID, SHADOW, HUD = (43, 32, 64), (28, 20, 42), (124, 106, 156)
+# Blender's axis colours. Z is up; X and Y lie on the floor.
+AXIS = {"X": (220, 80, 90), "Y": (120, 200, 100), "Z": (90, 130, 230)}
+BITS = {(0, 0): 0x01, (0, 1): 0x02, (0, 2): 0x04, (1, 0): 0x08,
+        (1, 1): 0x10, (1, 2): 0x20, (0, 3): 0x40, (1, 3): 0x80}
 
 
 def load_dots(path):
-    """Braille text -> list of (x, y) dots, centred on the jet."""
+    """Braille text -> list of integer (x, y) dots."""
     text = re.sub(r"\$[0-9]", "", open(path, encoding="utf-8").read())
     dots = []
     for row, line in enumerate(text.splitlines()):
         for col, ch in enumerate(line):
             v = ord(ch) - 0x2800
             if 0 < v <= 0xFF:
-                dots += [(col * 2 + dx, row * 4 + dy) for dx, dy, bit in BITS if v & bit]
+                dots += [(col * 2 + dx, row * 4 + dy) for (dx, dy), bit in BITS.items() if v & bit]
+    return dots
+
+
+def centred(dots):
     cx = sum(x for x, _ in dots) / len(dots)
     cy = sum(y for _, y in dots) / len(dots)
     return [(x - cx, y - cy) for x, y in dots]
 
 
+class Canvas:
+    """Braille cells. Each cell keeps the colour of its highest-priority, nearest dot."""
+
+    def __init__(self, cols, rows):
+        self.cols, self.rows = cols, rows
+        self.W, self.H = cols * 2, rows * 4
+        self.cells = {}
+        self.text = {}
+
+    def plot(self, px, py, colour, prio=0, depth=0.0):
+        px, py = int(px), int(py)
+        if not (0 <= px < self.W and 0 <= py < self.H):
+            return
+        key = (px >> 1, py >> 2)
+        bit = BITS[(px & 1, py & 3)]
+        cell = self.cells.get(key)
+        if cell is None:
+            self.cells[key] = [bit, colour, prio, depth]
+            return
+        cell[0] |= bit
+        if prio > cell[2] or (prio == cell[2] and depth < cell[3]):
+            cell[1], cell[2], cell[3] = colour, prio, depth
+
+    def line(self, x0, y0, x1, y1, colour, prio=0, dotted=False):
+        n = int(max(abs(x1 - x0), abs(y1 - y0))) + 1
+        for i in range(0, n + 1, 3 if dotted else 1):
+            self.plot(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, colour, prio)
+
+    def write(self, col, row, s, colour):
+        for i, ch in enumerate(s):
+            self.text[(col + i, row)] = (ch, colour)
+
+    def render(self):
+        out = ["\x1b[H"]
+        for r in range(self.rows):
+            line, colour = [], None
+            for c in range(self.cols):
+                t = self.text.get((c, r))
+                cell = self.cells.get((c, r))
+                if t:
+                    ch, col = t
+                elif cell:
+                    ch, col = chr(0x2800 + cell[0]), cell[1]
+                else:
+                    line.append(" ")
+                    continue
+                if col != colour:
+                    colour = col
+                    line.append("\x1b[38;2;%d;%d;%dm" % col)
+                line.append(ch)
+            out.append("".join(line) + "\x1b[0m\x1b[K" + ("\n" if r < self.rows - 1 else ""))
+        return "".join(out)
+
+
+class Turntable:
+    """The jet lying flat, spun about the vertical axis under a raised 3/4 camera."""
+
+    ELEVATION = math.radians(52)
+    AZIMUTH = math.radians(-35)
+
+    def __init__(self, dots):
+        # Thickness from how crowded each dot's neighbourhood is: the fuselage
+        # comes out fat, wingtips and fins stay thin.
+        occupied = set(dots)
+        density = [sum((x + dx, y + dy) in occupied for dx in range(-3, 4) for dy in range(-3, 4)) for x, y in dots]
+        top = max(density)
+        pts = centred(dots)
+        self.reach = max(math.hypot(x, y) for x, y in pts)
+        thick = self.reach * 0.1
+        # (X, Y, Z, shade): art x -> X (nose), art y -> Z, height -> Y. shade -1 top, 0 middle, +1 underside.
+        self.model = []
+        for (u, v), d in zip(pts, density):
+            d /= top
+            self.model.append((u, 0.0, v, 0))
+            if d > 0.3:
+                self.model.append((u, d * thick, v, -1))
+                self.model.append((u, -d * thick, v, 1))
+        self.floor = -self.reach * 0.55
+        self.grid_cache = None
+
+    def project(self, X, Y, Z, yaw_c, yaw_s):
+        """Y is height here; yaw is the turntable angle plus the camera's azimuth."""
+        x1 = X * yaw_c - Z * yaw_s
+        z1 = X * yaw_s + Z * yaw_c
+        ce, se = math.cos(self.ELEVATION), math.sin(self.ELEVATION)
+        yv = Y * ce + z1 * se           # far side sits higher on screen
+        zv = z1 * ce - Y * se           # depth away from the camera
+        p = self.focal / (self.focal + zv)
+        return self.cx + x1 * p * self.scale, self.cy - yv * p * self.scale, zv
+
+    def draw(self, canvas, t):
+        W, H = canvas.W, canvas.H
+        self.cx, self.cy = W / 2, H * 0.5
+        self.scale = min(W * 0.3, H * 0.5) / self.reach
+        self.focal = self.reach * 4
+        yaw = t * 0.9
+
+        az_c, az_s = math.cos(self.AZIMUTH), math.sin(self.AZIMUTH)
+        # Floor grid, fixed like a 3D viewport, with the X (red) and Y (green) axes.
+        if self.grid_cache != (W, H):
+            self.grid_cache = (W, H)
+            self.grid = []
+            R, n = self.reach * 1.15, 4
+            for i in range(-n, n + 1):
+                k = R * i / n
+                for a, b, colour in (((-R, k), (R, k), AXIS["X"] if i == 0 else GRID),
+                                     ((k, -R), (k, R), AXIS["Y"] if i == 0 else GRID)):
+                    x0, y0, _ = self.project(a[0], self.floor, a[1], az_c, az_s)
+                    x1, y1, _ = self.project(b[0], self.floor, b[1], az_c, az_s)
+                    dim = colour if colour == GRID else tuple(c // 2 for c in colour)
+                    self.grid.append((x0, y0, x1, y1, dim))
+        for x0, y0, x1, y1, colour in self.grid:
+            canvas.line(x0, y0, x1, y1, colour, prio=0, dotted=colour == GRID)
+
+        c, s = math.cos(yaw + self.AZIMUTH), math.sin(yaw + self.AZIMUTH)
+        # Shadow straight down on the floor.
+        for X, Y, Z, shade in self.model:
+            if shade == 0:
+                px, py, _ = self.project(X, self.floor, Z, c, s)
+                canvas.plot(px, py, SHADOW, prio=1)
+        for X, Y, Z, shade in self.model:
+            px, py, zv = self.project(X, Y, Z, c, s)
+            near = (zv / self.reach + 1) / 2             # 0 near .. 1 far
+            idx = min(len(GRADIENT) - 1, max(0, int(near * 6) + shade + 1))
+            canvas.plot(px, py, GRADIENT[idx], prio=2, depth=zv)
+
+        # Axis gizmo, bottom right, same camera without perspective.
+        gx, gy, L = W - 24, H - 20, 12
+        ce, se = math.cos(self.ELEVATION), math.sin(self.ELEVATION)
+        # (floor-x, height, floor-y) in this file's coordinates.
+        for name, (X, Y, Z) in (("X", (1, 0, 0)), ("Y", (0, 0, 1)), ("Z", (0, 1, 0))):
+            x1 = X * az_c - Z * az_s
+            z1 = X * az_s + Z * az_c
+            ex, ey = gx + x1 * L, gy - (Y * ce + z1 * se) * L
+            canvas.line(gx, gy, ex, ey, AXIS[name], prio=3)
+            canvas.write(int(ex + (ex - gx) * 0.35) // 2, int(ey + (ey - gy) * 0.35) // 4, name, AXIS[name])
+
+        deg = int(math.degrees(yaw)) % 360
+        canvas.write(2, 1, "User Perspective", HUD)
+        canvas.write(2, 2, "(1) Scene | jet", HUD)
+        canvas.write(2, canvas.rows - 2, "Rotation Z  %3d°" % deg, HUD)
+
+
+class Orbit:
+    """Jets flying in a circle, each facing along it, with contrails."""
+
+    def __init__(self, dots, count):
+        self.source = centred(dots)
+        self.reach = max(math.hypot(x, y) for x, y in self.source)
+        self.count = count
+        self.trails = [[] for _ in range(count)]
+
+    def draw(self, canvas, t):
+        W, H = canvas.W, canvas.H
+        scale = min(W, H) * 0.16 / self.reach
+        radius = min(W, H) * 0.5 - self.reach * scale - 2
+        for i in range(self.count):
+            a = t * 0.9 + i * 2 * math.pi / self.count
+            x, y = W / 2 + radius * math.cos(a), H / 2 + radius * math.sin(a)
+            self.trails[i] = (self.trails[i] + [(x, y)])[-40:]
+            for px, py in self.trails[i][:-6]:
+                canvas.plot(px, py, TRAIL, prio=0)
+            h = a + math.pi / 2
+            c, s = math.cos(h), math.sin(h)
+            for dx, dy in self.source:
+                py = y + (dx * s + dy * c) * scale
+                canvas.plot(x + (dx * c - dy * s) * scale, py, GRADIENT[min(5, int(py * 6 // H))], prio=1)
+
+
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    count = max(1, int(args[0])) if args else 2
-    spin_in_place = "--spin" in sys.argv
-    source = load_dots(LOGO)
-    reach = max(math.hypot(x, y) for x, y in source)
+    dots = load_dots(LOGO)
+    if "--orbit" in sys.argv:
+        nums = [a for a in sys.argv[1:] if a.isdigit()]
+        scene = Orbit(dots, max(1, int(nums[0])) if nums else 2)
+    else:
+        scene = Turntable(dots)
 
     fd = sys.stdin.fileno()
     saved = termios.tcgetattr(fd)
@@ -51,66 +230,16 @@ def main():
     signal.signal(signal.SIGINT, lambda *_: None)
     tty.setcbreak(fd)
     out.write("\x1b[?1049h\x1b[?25l\x1b[2J")
-    trails = [[] for _ in range(count)]
     start = time.monotonic()
     try:
-        while True:
-            if select.select([sys.stdin], [], [], 0)[0]:
-                break
+        while not select.select([sys.stdin], [], [], 0)[0]:
+            frame_start = time.monotonic()
             cols, rows = os.get_terminal_size()
-            rows -= 1
-            W, H = cols * 2, rows * 4  # canvas in braille dots
-            t = time.monotonic() - start
-
-            # Size the jets and the circle to the window.
-            if spin_in_place:
-                scale = min(W, H) * 0.45 / reach
-                radius = 0
-            else:
-                scale = min(W, H) * 0.16 / reach
-                radius = min(W, H) * 0.5 - reach * scale - 2
-            jets = []
-            for i in range(count):
-                a = t * 0.9 + i * 2 * math.pi / count
-                x = W / 2 + radius * math.cos(a)
-                y = H / 2 + radius * math.sin(a)
-                # Nose points +x in the art; face along the circle (or just spin).
-                heading = a * 2.5 if spin_in_place else a + math.pi / 2
-                jets.append((x, y, heading))
-
-            canvas = {}  # (cell col, cell row) -> [bits, colour]
-            for i, (x, y, _) in enumerate(jets):
-                if not spin_in_place:
-                    trails[i] = (trails[i] + [(x, y)])[-40:]
-                    for px, py in trails[i][:-6]:
-                        cell = canvas.setdefault((int(px) // 2, int(py) // 4), [0, TRAIL])
-                        cell[0] |= next(b for dx, dy, b in BITS if dx == int(px) % 2 and dy == int(py) % 4)
-            for x, y, heading in jets:
-                c, s = math.cos(heading), math.sin(heading)
-                for dx, dy in source:
-                    px = int(x + (dx * c - dy * s) * scale)
-                    py = int(y + (dx * s + dy * c) * scale)
-                    if 0 <= px < W and 0 <= py < H:
-                        cell = canvas.setdefault((px // 2, py // 4), [0, None])
-                        cell[0] |= next(b for bx, by, b in BITS if bx == px % 2 and by == py % 4)
-                        cell[1] = GRADIENT[min(5, py * 6 // H)]
-
-            frame = ["\x1b[H"]
-            for r in range(rows):
-                line, colour = [], None
-                for col in range(cols):
-                    cell = canvas.get((col, r))
-                    if not cell:
-                        line.append(" ")
-                        continue
-                    if cell[1] != colour:
-                        colour = cell[1]
-                        line.append("\x1b[38;2;%d;%d;%dm" % colour)
-                    line.append(chr(0x2800 + cell[0]))
-                frame.append("".join(line) + "\x1b[0m\x1b[K" + ("\n" if r < rows - 1 else ""))
-            out.write("".join(frame))
+            canvas = Canvas(cols, rows - 1)
+            scene.draw(canvas, frame_start - start)
+            out.write(canvas.render())
             out.flush()
-            time.sleep(1 / 30)
+            time.sleep(max(0, 1 / 30 - (time.monotonic() - frame_start)))
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, saved)
         out.write("\x1b[0m\x1b[?25h\x1b[?1049l")
