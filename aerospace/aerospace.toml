@@ -101,6 +101,8 @@ automatically-unhide-macos-hidden-apps = true
 
     # Blurred keybinding overlay, generated from this file at press time.
     ctrl-shift-slash = 'exec-and-forget /Users/christianaguilar/.config/aerospace/keys.sh'
+    # Super+| shows the Mach Saver screensaver (~/Developer/mach-saver); any key or mouse move exits.
+    ctrl-shift-backslash = 'exec-and-forget open -g mach-saver://show'
     ctrl-shift-c = ['workspace 1', 'exec-and-forget open -na "T3 Code (Alpha)"']
 
     # OBS controls
