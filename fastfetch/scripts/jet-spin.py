@@ -6,9 +6,14 @@
     jet-spin --orbit 3   any number of jets
     jet-spin --fetch     fastfetch with the logo spinning in 3D until you press a key
     jet-spin --fetch --once   just one spin, then settle
+    jet-spin --fetch --bg PIDFILE SHELLPID
+                         fastfetch, then hand back the prompt while the jet keeps
+                         spinning in the background (used by ~/.zshrc; the shell
+                         stops it before any output via the pid in PIDFILE)
 
 Any key stops it. In --fetch the key still goes to your prompt.
 """
+import fcntl
 import math
 import os
 import re
@@ -351,7 +356,111 @@ def fetch(loop):
         out.flush()
 
 
+def cursor_row(fd):
+    """Ask the terminal where the cursor is (1-based row). Any keys typed in the
+    meantime are pushed back so the prompt still gets them."""
+    saved = termios.tcgetattr(fd)
+    tty.setcbreak(fd, termios.TCSANOW)
+    try:
+        os.write(fd, b"\x1b[6n")
+        buf, deadline = b"", time.monotonic() + 0.5
+        while not re.search(rb"\x1b\[(\d+);(\d+)R", buf) and time.monotonic() < deadline:
+            if select.select([fd], [], [], 0.05)[0]:
+                buf += os.read(fd, 64)
+        m = re.search(rb"\x1b\[(\d+);(\d+)R", buf)
+        extra = buf[:m.start()] + buf[m.end():] if m else buf
+        for b in extra:
+            try:
+                fcntl.ioctl(fd, termios.TIOCSTI, bytes([b]))
+            except OSError:
+                break
+        return int(m.group(1)) if m else None
+    finally:
+        termios.tcsetattr(fd, termios.TCSANOW, saved)
+
+
+def fetch_background(pidfile, shell_pid):
+    """Print fastfetch with the static logo, then fork an animator that redraws just
+    the logo in place, spinning, while the prompt sits below it. The shell kills it
+    before running anything; on SIGTERM it puts the static logo back first."""
+    pad, gap = 2, 2
+    art = re.sub(r"\$[0-9]", "", open(LOGO, encoding="utf-8").read()).splitlines()
+    width = pad + max(len(l) for l in art) + gap
+    info = subprocess.run(["fastfetch", "--logo", "none", "--pipe", "false"],
+                          capture_output=True, text=True).stdout.rstrip("\n").split("\n")
+    final = static_logo(LOGO, width)
+    height = max(len(final), len(info))
+    final += [" " * width] * (height - len(final))
+    info += [""] * (height - len(info))
+    out = sys.stdout
+    out.write("\r" + "\n".join("\x1b[2K" + l + r for l, r in zip(final, info)) + "\x1b[0m\n")
+    out.flush()
+    if not (sys.stdin.isatty() and out.isatty()):
+        return
+    fd = sys.stdin.fileno()
+    row = cursor_row(fd)
+    top = row - height if row else 0
+    if top < 1:
+        return
+    tty_path = os.ttyname(fd)
+    size = os.get_terminal_size(fd)
+
+    if os.fork():
+        return  # parent: done, the shell shows its prompt
+    os.setsid()
+    tty_fd = os.open(tty_path, os.O_WRONLY | os.O_NOCTTY)
+    devnull = os.open(os.devnull, os.O_RDWR)
+    for f in (0, 1, 2):
+        os.dup2(devnull, f)
+    with open(pidfile, "w") as fh:
+        fh.write(str(os.getpid()))
+
+    def paint(lines):
+        # Save cursor, draw each logo row at its absolute position, restore cursor.
+        frame = "\x1b7" + "".join("\x1b[%d;1H%s" % (top + i, l) for i, l in enumerate(lines)) + "\x1b8"
+        os.write(tty_fd, frame.encode())
+
+    stopping = []
+    signal.signal(signal.SIGTERM, lambda *_: stopping.append(1))
+    signal.signal(signal.SIGHUP, lambda *_: stopping.append(1))
+    scene = FetchSpin(load_dots(LOGO), pad)
+    cache, steps = {}, 72   # after the tilt-in, one turn of frames is cached and replayed
+    start = time.monotonic()
+    try:
+        while not stopping:
+            try:
+                os.kill(shell_pid, 0)
+                if os.get_terminal_size(tty_fd) != size:
+                    return  # resized: the text reflowed, so the rows are no longer ours
+            except OSError:
+                return
+            t = time.monotonic() - start
+            if t < 1.2:
+                canvas = Canvas(width, height)
+                scene.draw(canvas, t, loop=True)
+                lines = canvas.lines()
+            else:
+                k = int(FetchSpin.TURN * (t - 0.5) / (2 * math.pi) * steps) % steps
+                if k not in cache:
+                    canvas = Canvas(width, height)
+                    scene.draw(canvas, 0.5 + (steps + k) * 2 * math.pi / (steps * FetchSpin.TURN), loop=True)
+                    cache[k] = canvas.lines()
+                lines = cache[k]
+            paint(lines)
+            time.sleep(1 / 24)
+        paint(final)
+    finally:
+        try:
+            os.unlink(pidfile)
+        except OSError:
+            pass
+        os._exit(0)
+
+
 def main():
+    if "--bg" in sys.argv:
+        i = sys.argv.index("--bg")
+        return fetch_background(sys.argv[i + 1], int(sys.argv[i + 2]))
     if "--fetch" in sys.argv:
         return fetch(loop="--once" not in sys.argv)
     dots = load_dots(LOGO)

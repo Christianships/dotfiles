@@ -16,9 +16,32 @@ autoload -U colors && colors
 PS1="%{$fg[magenta]%}%n@%m %~%{$reset_color%}$ "
 
 eval "$(starship init zsh)"
-# fastfetch, with the jet logo doing one 3D spin before it settles
-# (~/.config/fastfetch/scripts/jet-spin.py). Falls back to plain fastfetch.
-_fetch() { python3 ~/.config/fastfetch/scripts/jet-spin.py --fetch 2>/dev/null || fastfetch; }
+# fastfetch with the jet logo spinning in 3D (~/.config/fastfetch/scripts/jet-spin.py).
+# The prompt is ready straight away; the logo keeps spinning above it in the
+# background and is put back to the static logo the moment you press Enter,
+# clear the screen or hit Ctrl-C, since output after that would move it.
+# Plain `fastfetch` does this too; `fastfetch <args>` runs the real thing.
+_jet_pidfile="${TMPDIR:-/tmp}/jet-spin-$$.pid"
+_jet_stop() {
+  [[ -f $_jet_pidfile ]] || return 0
+  local pid=$(<$_jet_pidfile) i
+  kill $pid 2>/dev/null
+  # Wait (up to ~0.3s) for it to repaint the static logo before anything scrolls.
+  for i in {1..30}; do kill -0 $pid 2>/dev/null || break; sleep 0.01; done
+  rm -f $_jet_pidfile
+}
+_fetch() {
+  _jet_stop
+  python3 ~/.config/fastfetch/scripts/jet-spin.py --fetch --bg $_jet_pidfile $$ 2>/dev/null || command fastfetch
+}
+fastfetch() { if (( $# )); then command fastfetch "$@"; else _fetch; fi }
+autoload -Uz add-zle-hook-widget
+_jet_line_finish() { _jet_stop }
+add-zle-hook-widget line-finish _jet_line_finish
+_jet_clear_screen() { _jet_stop; zle .clear-screen }
+zle -N clear-screen _jet_clear_screen
+TRAPINT() { _jet_stop; return $(( 128 + $1 )) }
+zshexit() { _jet_stop }
 # fastfetch only in the first Ghostty shell of each Ghostty launch. Ghostty is
 # one process for all windows/tabs, so its PID identifies the launch; mkdir is
 # atomic, so only one shell can claim it even when windows open simultaneously.
@@ -45,7 +68,6 @@ if [[ $TERM_PROGRAM == ghostty ]]; then
 else
   _fetch
 fi
-unfunction _fetch
 
 source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 # Everything you type at the prompt renders in strong purple (#A855F7, the
