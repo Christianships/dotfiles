@@ -43,10 +43,10 @@ automatically-unhide-macos-hidden-apps = true
 # Backstop for apps that open a window without taking focus, which would
 # otherwise skip the on-focus-changed pass. dwindle.sh self-locks, so the two
 # triggers firing together for one window is harmless.
-# msig's panel is a small HUD centred on screen; keep it out of the tiling tree.
+# MouseSkins' panel is a small HUD centred on screen; keep it out of the tiling tree.
 # Listed first so the dwindle callback below never sees it.
 [[on-window-detected]]
-    if.app-id = 'dev.christianaguilar.msig'
+    if.app-id = 'dev.christianaguilar.mouseskins'
     run = ['layout floating']
 
 [[on-window-detected]]
