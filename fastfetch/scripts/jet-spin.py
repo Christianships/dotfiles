@@ -232,11 +232,11 @@ class Orbit:
 
 
 class Afterburner:
-    """The jet from the Mach Saver afterburner screensaver: its dots flash in left
-    to right, then it holds still, centred in its box, while a shine sweeps across
-    it every 5s and speed lines streak off behind it. Coordinates are braille dots."""
+    """The jet from the Mach Saver afterburner screensaver, held still and centred
+    in its box, with speed lines streaking off behind it so it looks like it's
+    flying. Coordinates are braille dots."""
 
-    ONCE = 3.0   # --once: the intro plus a sweep, then settle
+    ONCE = 3.0   # --once: how long the speed lines run before it settles
 
     def __init__(self, dots, box):
         """`box` is (left, top, width, height) in dots; the jet is centred in it."""
@@ -246,21 +246,21 @@ class Afterburner:
         left, top, bw, bh = box
         self.ox = left + round((bw - self.w) / 2)
         self.oy = top + round((bh - self.h) / 2)
-        self.reveal = [0.3 + x / self.w * 1.1 + random.uniform(0, 0.25) for x, _ in dots]
-        self.streaks = []   # [x, y, speed, length]
+        # Start with a few lines already in flight so it's moving from the first frame.
+        self.streaks = [self.new_streak(self.w * random.uniform(0, 0.45)) for _ in range(4)]
         self.last = 0.0
 
-    @staticmethod
-    def lighten(colour, amount):
-        return tuple(int(c + (255 - c) * amount) for c in colour)
+    def new_streak(self, x=None):
+        """[x, y, speed, length]: leaves from the body, heads left."""
+        return [self.w * random.uniform(0.1, 0.45) if x is None else x, self.h * random.uniform(0.3, 0.72),
+                random.uniform(60, 100), random.uniform(6, 16)]
 
     def draw(self, canvas, t, loop=True):
         dt, self.last = min(0.1, max(0.0, t - self.last)), t
 
-        # Speed lines leave from the body and fade out before the left edge.
-        if t > 1.2 and random.random() < dt * 10:
-            self.streaks.append([self.w * random.uniform(0.1, 0.45), self.h * random.uniform(0.3, 0.72),
-                                 random.uniform(60, 100), random.uniform(6, 16)])
+        # Speed lines fade out before the left edge.
+        if random.random() < dt * 10:
+            self.streaks.append(self.new_streak())
         for st in self.streaks:
             st[0] -= st[2] * dt
         self.streaks = [st for st in self.streaks if st[0] + st[3] > 0]
@@ -269,19 +269,7 @@ class Afterburner:
             colour = GRADIENT[7 - int(fade * 3)] if fade < 1 else GRADIENT[4]
             for i in range(int(length)):
                 canvas.plot(self.ox + x + i, self.oy + y, colour, prio=0)
-
-        span = self.w + self.h + 20
-        sweep = (t % 5.0) / 5.0 * span - 10
-        for (x, y), r in zip(self.dots, self.reveal):
-            shown = t - r
-            if shown < 0:
-                continue
-            flash = max(0.0, 1 - shown / 0.35)
-            dist = abs(x + y * 0.6 - sweep)
-            shine = (1 - dist / 5) * 0.8 if dist < 5 else 0.0
-            level = round(max(flash, shine) * 3)       # 0..3, brighter wins the cell
-            colour = self.lighten(GRADIENT[min(5, y * 6 // self.h)], level / 3 * 0.85)
-            canvas.plot(self.ox + x, self.oy + y, colour, prio=1 + level)
+        self.draw_static(canvas)
 
     def draw_static(self, canvas):
         """The settled logo: every dot in its gradient band, nothing moving."""
