@@ -28,8 +28,8 @@ cursor-style = block
 # state on every blink, so trails/smears never get to play out -- they flicker
 # or never appear at all. Set back to true if you drop cursor shaders.
 cursor-style-blink = false
-cursor-color = #a855f7
-cursor-text = #140d20
+cursor-color = #7e22ce
+cursor-text = #f3e8ff
 # Stop shell integration from swapping in a thin/hollow cursor at the
 # zsh prompt — keep the real block+blink cursor everywhere, including
 # inside TUI apps like Claude Code.

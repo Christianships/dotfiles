@@ -71,9 +71,9 @@ float ease(float x) {
 
 // Recoloured to the nvim/Ghostty purple palette. Upstream was ice-cyan body
 // with a pure-blue rim; the structure is kept -- bright body, deeper rim --
-// but both are strong violets now rather than a pale lavender body.
-const vec4 TRAIL_COLOR = vec4(0.659, 0.333, 0.969, 1.0);        // #a855f7 body -- matches cursor-color
-const vec4 TRAIL_COLOR_ACCENT = vec4(0.494, 0.133, 0.808, 1.0); // #7e22ce rim  -- deep violet
+// but both are deep, strong violets now rather than a pale lavender body.
+const vec4 TRAIL_COLOR = vec4(0.494, 0.133, 0.808, 1.0);        // #7e22ce body -- matches cursor-color
+const vec4 TRAIL_COLOR_ACCENT = vec4(0.345, 0.110, 0.529, 1.0); // #581c87 rim  -- darker still
 const float DURATION = 0.3; //IN SECONDS
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
