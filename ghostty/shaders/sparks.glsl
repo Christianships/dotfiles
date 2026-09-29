@@ -68,12 +68,12 @@ float getSdfRectangle(in vec2 p, in vec2 xy, in vec2 b)
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 base_color = iCurrentCursorColor.rgb;
     // Purple instead of upstream's blue (0.1, 0.5, 2.5). Not simply the cursor
-    // colour from the line above: #c9a4ff is too pale (G=0.64) and blooms toward
-    // white rather than purple. Blue stays over-driven at 2.5 -- that overshoot
-    // past 1.0 is what makes sparks bloom -- with green held low so the hue stays
-    // violet. Dim sparks read as #a855f7-ish purple; the hot cores push toward
-    // magenta, which is the palette's next colour along anyway.
-    base_color = vec3(1.2, 0.35, 2.5);
+    // colour from the line above: a pale cursor blooms toward white rather than
+    // purple. Blue stays over-driven at 2.5 -- that overshoot past 1.0 is what
+    // makes sparks bloom -- with green almost gone and red below half of blue,
+    // so even the hot cores stay a strong violet instead of washing out.
+    // (Was 1.2, 0.35, 2.5: lighter, and the cores bloomed toward white/magenta.)
+    base_color = vec3(1.05, 0.12, 2.5);
     // base_color = vec3(0.5, 0.1, 2.5);
 
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy);
