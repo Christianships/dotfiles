@@ -92,6 +92,11 @@ automatically-unhide-macos-hidden-apps = true
     PATH = '/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}'
 
 [mode.main.binding]
+    # No macOS "hide": AeroSpace unhides hidden apps right away
+    # (automatically-unhide-macos-hidden-apps), so hiding only made the
+    # screen flicker and re-tile. Swallow both shortcuts instead.
+    cmd-h = []
+    cmd-alt-h = []
     # Apps
     ctrl-enter = 'exec-and-forget open -na Ghostty'
     ctrl-shift-t = 'exec-and-forget /Users/christianaguilar/.config/aerospace/launch-agent-grid.sh'
