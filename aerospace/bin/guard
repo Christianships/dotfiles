@@ -1,51 +1,28 @@
 #!/bin/bash
-# Keeps AeroSpace running. Run every few seconds by the dev.mach.aerospace
-# LaunchAgent. If AeroSpace is down it relaunches it; if it can't stay up,
-# it reads the system log to find out why, then shows a notification and
-# opens the System Settings page that fixes it.
+# Keeps AeroSpace running. Run every 15s by the dev.mach.aerospace LaunchAgent.
 #
-# Known causes:
-#   - Menu Bar → "Allow in the Menu Bar" has AeroSpace off: ControlCenter
-#     hides the icon and AeroSpace quits ("terminating on removal").
-#   - Accessibility permission lost: AeroSpace resets its own grant and quits.
+#   - If the installed app isn't the menu-bar-patched build (e.g. after
+#     `brew upgrade` replaced it), rebuilds it with patch-menubar.
+#   - If AeroSpace isn't running, relaunches it.
 #
 # Pause it (e.g. to quit AeroSpace on purpose): touch /tmp/aerospace-guard.pause
 
+DIR="$(cd "$(dirname "$0")" && pwd)"
 PAUSE=/tmp/aerospace-guard.pause
-ALERTED=/tmp/aerospace-guard.alerted
-COOLDOWN=600 # seconds between alerts (and relaunch attempts) once one fires
+MARKER=/Applications/AeroSpace.app/Contents/Resources/menubar-patched
+PATCH_LOCK=/tmp/aerospace-guard.patching
+PATCH_LOG=/tmp/aerospace-guard.patch.log
 
-running() { /usr/bin/pgrep -qf '/Applications/AeroSpace.app/Contents/MacOS/AeroSpace'; }
-
-running && { rm -f "$ALERTED"; exit 0; }
 [ -e "$PAUSE" ] && exit 0
 
-if [ -e "$ALERTED" ]; then
-  age=$(( $(date +%s) - $(stat -f %m "$ALERTED") ))
-  [ "$age" -lt "$COOLDOWN" ] && exit 0
+# Rebuild at most once an hour per failure, in the background (takes ~1 min).
+if [ ! -e "$MARKER" ] && [ ! -e "$PATCH_LOCK" ]; then
+  if [ ! -e "$PATCH_LOG" ] || [ $(( $(date +%s) - $(stat -f %m "$PATCH_LOG") )) -gt 3600 ]; then
+    ( touch "$PATCH_LOCK"; "$DIR/patch-menubar" > "$PATCH_LOG" 2>&1; rm -f "$PATCH_LOCK" ) &
+  fi
 fi
 
+/usr/bin/pgrep -qf '/Applications/AeroSpace.app/Contents/MacOS/AeroSpace' && exit 0
+[ -e "$PATCH_LOCK" ] && exit 0 # patch-menubar relaunches it when done
 /usr/bin/open -g -a AeroSpace
-sleep 4
-running && exit 0
-
-logs=$(/usr/bin/log show --last 15s --info --style compact --predicate '
-  (process == "ControlCenter" AND eventMessage CONTAINS "blocked host" AND eventMessage CONTAINS "bobko.aerospace")
-  OR (process == "AeroSpace" AND eventMessage CONTAINS "terminating on removal")
-  OR (process == "tccd" AND eventMessage CONTAINS "Refusing" AND eventMessage CONTAINS "bobko.aerospace")' 2>/dev/null)
-
-if grep -q -e 'blocked host' -e 'terminating on removal' <<<"$logs"; then
-  msg='Its menu bar icon is hidden. Turn AeroSpace on under "Allow in the Menu Bar".'
-  pane='x-apple.systempreferences:com.apple.ControlCenter-Settings.extension'
-elif grep -q 'Refusing' <<<"$logs"; then
-  msg='Accessibility permission was lost. Remove AeroSpace with − and add it back.'
-  pane='x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'
-else
-  msg='It quit right after launch for an unknown reason. Check the system log.'
-  pane=''
-fi
-
-touch "$ALERTED"
-/usr/bin/osascript -e "display notification \"$msg\" with title \"AeroSpace won't stay open\" sound name \"Basso\""
-[ -n "$pane" ] && /usr/bin/open "$pane"
 exit 0
