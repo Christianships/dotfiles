@@ -1,7 +1,8 @@
 #!/bin/bash
-# Rebuilds the installed AeroSpace with one patch: its menu bar icon uses
+# Rebuilds the installed AeroSpace with two patches: its menu bar icon uses
 # MenuBarExtra(isInserted:), so AeroSpace keeps running when macOS hides or
-# removes the icon (Menu Bar > "Allow in the Menu Bar") instead of quitting.
+# removes the icon (Menu Bar > "Allow in the Menu Bar") instead of quitting,
+# and the menu has no "Quit AeroSpace" item to click by accident.
 #
 # Builds the same version tag that's installed (so the aerospace CLI and
 # config stay compatible), swaps the binary into /Applications/AeroSpace.app
@@ -28,6 +29,10 @@ cd "$SRC"
 file=Sources/AppBundle/ui/MenuBar.swift
 grep -q '^    MenuBarExtra {$' "$file" || { echo "patch target not found in $file (upstream changed)" >&2; exit 1; }
 sed -i '' 's/^    MenuBarExtra {$/    MenuBarExtra(isInserted: .constant(true)) {/' "$file"
+# Drop the menu's "Quit AeroSpace" item (and its Cmd-Q): with the icon always
+# shown, a stray click on it was quitting AeroSpace several times an hour.
+perl -0pi -e 's/\n        Button\("Quit \\\(aeroSpaceAppName\)"\) \{.*?\}\.keyboardShortcut\("Q", modifiers: \.command\)//s' "$file"
+grep -q 'Button("Quit' "$file" && { echo "quit item not removed from $file (upstream changed)" >&2; exit 1; }
 
 ./generate.sh --ignore-xcodeproj --ignore-cmd-help --build-version "$version" --generate-git-hash
 swift build -c release --arch arm64 --product AeroSpaceApp
