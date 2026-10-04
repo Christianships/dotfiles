@@ -111,10 +111,11 @@ automatically-unhide-macos-hidden-apps = true
 
     # OBS controls
     # Scenes and camera controls. Control is the SUPER key in this config.
-    ctrl-alt-0 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs scene start'
+    ctrl-alt-0 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs scene soon'
     ctrl-alt-1 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs scene camera'
     ctrl-alt-2 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs scene screen'
     ctrl-alt-3 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs scene explain'
+    ctrl-alt-9 = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs scene ending'
     ctrl-alt-c = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs follow toggle'
     ctrl-alt-r = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs record toggle'
     ctrl-alt-shift-r = 'exec-and-forget /usr/bin/env node /Users/christianaguilar/Documents/Director/scripts/obs-control.mjs record stop'
