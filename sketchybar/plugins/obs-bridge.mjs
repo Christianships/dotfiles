@@ -320,10 +320,10 @@ let lastCameraName = null;
 // itself the signal that you moved to it.
 
 // ── Mouse-follow indicator ────────────────────────────────────────
-// cTrack's obs-smooth-follow.mjs writes its PID here while running and
+// Director's obs-smooth-follow.mjs writes its PID here while running and
 // removes the file on exit, so PID-file-plus-liveness is an accurate probe.
 // Hidden entirely when the follower is not running.
-const FOLLOW_PID = "/tmp/ctrack-obs-smooth-follow.pid";
+const FOLLOW_PID = "/tmp/director-obs-smooth-follow.pid";
 
 let followTimer = null;
 let followPulse = true;

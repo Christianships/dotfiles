@@ -108,7 +108,7 @@ sketchybar --add item obs.scene left \
 # Mouse-follow status. Added last, so it renders at the far LEFT of the OBS
 # group. Hidden entirely unless the follower is running; when it is, the dot
 # beside the cursor blinks green. State comes from the follower's PID file,
-# written by cTrack's obs-smooth-follow.mjs and removed when it exits.
+# written by Director's obs-smooth-follow.mjs and removed when it exits.
 sketchybar --add item obs.follow right \
     --set obs.follow \
         drawing=off \
