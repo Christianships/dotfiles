@@ -11,6 +11,9 @@ source "$CONFIG_DIR/plugins/_env.sh"
 source "$CONFIG_DIR/colors.sh"
 source "$PLUGIN_DIR/app_icon.sh"
 
+# The CLI hangs forever if AeroSpace quits mid-request; give up after 3s.
+aerospace() { /usr/bin/perl -e 'alarm 3; exec @ARGV' aerospace "$@"; }
+
 WORKSPACES=(1 2 3 4 5 6 7 8 9 10)
 
 # An empty pill is a 1:1 square. SQUARE is the pill's side (it must match
